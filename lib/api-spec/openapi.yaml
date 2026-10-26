@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: leads
+    description: Lead capture and pipeline management
+  - name: settings
+    description: Business profile and public intake settings
+  - name: public
+    description: Public-facing intake operations
 paths:
   /healthz:
     get:
@@ -24,6 +30,186 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List leads for the authenticated business
+      responses:
+        "200":
+          description: Leads ordered by most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Create a lead from the authenticated dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+  /leads/{leadId}:
+    parameters:
+      - name: leadId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get one lead owned by the authenticated business
+      responses:
+        "200":
+          description: Lead details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update a lead's pipeline stage and notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdate"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteLead
+      tags: [leads]
+      summary: Delete a lead owned by the authenticated business
+      responses:
+        "204":
+          description: Lead deleted
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /dashboard/insights:
+    get:
+      operationId: getLeadInsights
+      tags: [leads]
+      summary: Get lead totals, pipeline counts, and offer breakdown
+      responses:
+        "200":
+          description: Lead dashboard insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadInsights"
+  /settings:
+    get:
+      operationId: getLeadSettings
+      tags: [settings]
+      summary: Get the authenticated business profile
+      responses:
+        "200":
+          description: Business profile settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadSettings"
+    put:
+      operationId: updateLeadSettings
+      tags: [settings]
+      summary: Update the authenticated business profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadSettingsInput"
+      responses:
+        "200":
+          description: Saved business profile settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadSettings"
+  /public/owners/{ownerId}:
+    get:
+      operationId: getPublicLeadSettings
+      tags: [public]
+      summary: Get the public business profile for an intake link
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public-facing business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLeadSettings"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /public/leads:
+    post:
+      operationId: submitPublicLead
+      tags: [public]
+      summary: Submit a prospect's service assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicLeadInput"
+      responses:
+        "201":
+          description: Assessment saved and summary report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLeadResult"
+        "400":
+          description: Invalid assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +219,165 @@ components:
           type: string
       required:
         - status
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    ServiceType:
+      type: string
+      enum: [local-seo, zero-waste, general]
+    LeadStage:
+      type: string
+      enum: [new, contacted, proposal, won, lost]
+    Lead:
+      type: object
+      properties:
+        id: { type: integer }
+        ownerId: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        company: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        serviceType: { $ref: "#/components/schemas/ServiceType" }
+        industry: { type: ["string", "null"] }
+        goals: { type: string }
+        challenge: { type: string }
+        timeline: { type: string }
+        readinessScore: { type: integer, minimum: 0, maximum: 100 }
+        reportSummary: { type: string }
+        notes: { type: ["string", "null"] }
+        stage: { $ref: "#/components/schemas/LeadStage" }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - ownerId
+        - name
+        - email
+        - serviceType
+        - goals
+        - challenge
+        - timeline
+        - readinessScore
+        - reportSummary
+        - stage
+        - createdAt
+    LeadInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 320 }
+        company: { type: ["string", "null"], maxLength: 160 }
+        website: { type: ["string", "null"], maxLength: 500 }
+        serviceType: { $ref: "#/components/schemas/ServiceType" }
+        industry: { type: ["string", "null"], maxLength: 160 }
+        goals: { type: string, minLength: 1, maxLength: 3000 }
+        challenge: { type: string, minLength: 1, maxLength: 3000 }
+        timeline: { type: string, minLength: 1, maxLength: 80 }
+        notes: { type: ["string", "null"], maxLength: 4000 }
+      required: [name, email, serviceType, goals, challenge, timeline]
+    LeadUpdate:
+      type: object
+      properties:
+        stage: { $ref: "#/components/schemas/LeadStage" }
+        notes: { type: ["string", "null"], maxLength: 4000 }
+    LeadSettings:
+      type: object
+      properties:
+        ownerId: { type: string }
+        businessName: { type: string }
+        tagline: { type: string }
+        enabledServices:
+          type: array
+          items: { $ref: "#/components/schemas/ServiceType" }
+        websiteUrl: { type: ["string", "null"], format: uri }
+        fiverrUrl: { type: ["string", "null"], format: uri }
+      required: [ownerId, businessName, tagline, enabledServices]
+    LeadSettingsInput:
+      type: object
+      properties:
+        businessName: { type: string, minLength: 1, maxLength: 160 }
+        tagline: { type: string, maxLength: 500 }
+        enabledServices:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/ServiceType" }
+        websiteUrl: { type: ["string", "null"], format: uri }
+        fiverrUrl: { type: ["string", "null"], format: uri }
+      required: [businessName, tagline, enabledServices]
+    PublicLeadSettings:
+      type: object
+      properties:
+        businessName: { type: string }
+        tagline: { type: string }
+        enabledServices:
+          type: array
+          items: { $ref: "#/components/schemas/ServiceType" }
+        websiteUrl: { type: ["string", "null"], format: uri }
+        fiverrUrl: { type: ["string", "null"], format: uri }
+      required: [businessName, tagline, enabledServices]
+    PublicLeadInput:
+      type: object
+      properties:
+        ownerId: { type: string, minLength: 1, maxLength: 200 }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 320 }
+        company: { type: ["string", "null"], maxLength: 160 }
+        website: { type: ["string", "null"], maxLength: 500 }
+        serviceType: { $ref: "#/components/schemas/ServiceType" }
+        industry: { type: ["string", "null"], maxLength: 160 }
+        goals: { type: string, minLength: 1, maxLength: 3000 }
+        challenge: { type: string, minLength: 1, maxLength: 3000 }
+        timeline: { type: string, minLength: 1, maxLength: 80 }
+      required:
+        - ownerId
+        - name
+        - email
+        - serviceType
+        - goals
+        - challenge
+        - timeline
+    PublicLeadResult:
+      type: object
+      properties:
+        id: { type: integer }
+        businessName: { type: string }
+        serviceType: { $ref: "#/components/schemas/ServiceType" }
+        readinessScore: { type: integer, minimum: 0, maximum: 100 }
+        reportTitle: { type: string }
+        reportSummary: { type: string }
+      required:
+        - id
+        - businessName
+        - serviceType
+        - readinessScore
+        - reportTitle
+        - reportSummary
+    ServiceBreakdown:
+      type: object
+      properties:
+        serviceType: { $ref: "#/components/schemas/ServiceType" }
+        count: { type: integer }
+      required: [serviceType, count]
+    LeadInsights:
+      type: object
+      properties:
+        totalLeads: { type: integer }
+        newLeads: { type: integer }
+        activeLeads: { type: integer }
+        wonLeads: { type: integer }
+        winRate: { type: number }
+        leadsThisMonth: { type: integer }
+        serviceBreakdown:
+          type: array
+          items: { $ref: "#/components/schemas/ServiceBreakdown" }
+      required:
+        - totalLeads
+        - newLeads
+        - activeLeads
+        - wonLeads
+        - winRate
+        - leadsThisMonth
+        - serviceBreakdown
 

@@ -1,0 +1,1 @@
+- [Service lead tool scope](service-lead-tool.md) — Flexible intake for Local SEO/GEO, zero-waste, and general client needs, with editable website and Fiverr links.
