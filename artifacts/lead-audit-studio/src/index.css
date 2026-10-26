@@ -69,36 +69,36 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Fieldwork palette: warm ledger paper, deep evergreen ink, brass markers. */
+/* Boss Mom Consulting palette: warm tan, confident red, and soft rose. */
 :root {
-  --background: 42 39% 95%; --foreground: 161 24% 17%; --border: 38 22% 84%;
-  --card: 44 40% 98%; --card-foreground: 161 24% 17%; --card-border: 38 22% 84%;
-  --sidebar: 160 24% 20%; --sidebar-foreground: 45 37% 92%; --sidebar-border: 160 19% 29%;
-  --sidebar-primary: 37 74% 63%; --sidebar-primary-foreground: 161 24% 17%;
-  --sidebar-accent: 160 19% 29%; --sidebar-accent-foreground: 45 37% 92%; --sidebar-ring: 37 74% 63%;
-  --popover: 44 40% 98%; --popover-foreground: 161 24% 17%; --popover-border: 38 22% 84%;
-  --primary: 160 31% 27%; --primary-foreground: 42 39% 96%; --secondary: 38 29% 89%;
-  --secondary-foreground: 161 24% 20%; --muted: 39 24% 91%; --muted-foreground: 156 10% 43%;
-  --accent: 37 74% 63%; --accent-foreground: 161 24% 17%; --destructive: 5 58% 49%;
-  --destructive-foreground: 0 0% 98%; --input: 38 22% 84%; --ring: 160 31% 35%;
-  --chart-1: 160 31% 27%; --chart-2: 37 74% 57%; --chart-3: 199 29% 52%;
-  --chart-4: 12 47% 61%; --chart-5: 92 23% 57%;
+  --background: 30 38% 95%; --foreground: 344 22% 20%; --border: 25 27% 84%;
+  --card: 38 50% 99%; --card-foreground: 344 22% 20%; --card-border: 25 27% 84%;
+  --sidebar: 344 49% 27%; --sidebar-foreground: 30 50% 96%; --sidebar-border: 344 38% 36%;
+  --sidebar-primary: 17 38% 72%; --sidebar-primary-foreground: 344 22% 20%;
+  --sidebar-accent: 344 38% 36%; --sidebar-accent-foreground: 30 50% 96%; --sidebar-ring: 343 45% 72%;
+  --popover: 38 50% 99%; --popover-foreground: 344 22% 20%; --popover-border: 25 27% 84%;
+  --primary: 344 49% 33%; --primary-foreground: 30 50% 97%; --secondary: 25 39% 90%;
+  --secondary-foreground: 344 24% 23%; --muted: 28 26% 92%; --muted-foreground: 345 11% 44%;
+  --accent: 342 43% 68%; --accent-foreground: 344 35% 20%; --destructive: 0 64% 48%;
+  --destructive-foreground: 0 0% 98%; --input: 25 27% 84%; --ring: 342 43% 60%;
+  --chart-1: 344 49% 33%; --chart-2: 342 43% 68%; --chart-3: 25 38% 58%;
+  --chart-4: 0 60% 55%; --chart-5: 18 29% 71%;
   --app-font-sans: 'DM Sans', sans-serif; --app-font-serif: 'Fraunces', serif; --app-font-mono: 'DM Mono', monospace;
   --radius: .8rem;
 }
 .dark {
-  --background: 161 23% 12%; --foreground: 42 30% 91%; --border: 160 12% 29%;
-  --card: 160 19% 17%; --card-foreground: 42 30% 91%; --card-border: 160 12% 29%;
-  --sidebar: 161 25% 10%; --sidebar-foreground: 42 30% 91%; --sidebar-border: 160 12% 25%;
-  --sidebar-primary: 37 74% 63%; --sidebar-primary-foreground: 161 24% 17%;
-  --sidebar-accent: 160 17% 22%; --sidebar-accent-foreground: 42 30% 91%; --sidebar-ring: 37 74% 63%;
-  --popover: 160 19% 17%; --popover-foreground: 42 30% 91%; --popover-border: 160 12% 29%;
-  --primary: 160 30% 54%; --primary-foreground: 161 26% 10%; --secondary: 160 14% 24%;
-  --secondary-foreground: 42 30% 91%; --muted: 160 14% 24%; --muted-foreground: 38 12% 65%;
-  --accent: 37 74% 63%; --accent-foreground: 161 24% 17%; --destructive: 5 58% 58%;
-  --destructive-foreground: 0 0% 98%; --input: 160 12% 29%; --ring: 160 30% 54%;
-  --chart-1: 160 30% 54%; --chart-2: 37 74% 63%; --chart-3: 199 29% 62%;
-  --chart-4: 12 47% 65%; --chart-5: 92 23% 62%;
+  --background: 344 23% 13%; --foreground: 30 34% 92%; --border: 344 15% 30%;
+  --card: 344 23% 17%; --card-foreground: 30 34% 92%; --card-border: 344 15% 30%;
+  --sidebar: 344 30% 10%; --sidebar-foreground: 30 34% 92%; --sidebar-border: 344 18% 24%;
+  --sidebar-primary: 342 43% 68%; --sidebar-primary-foreground: 344 22% 20%;
+  --sidebar-accent: 344 22% 23%; --sidebar-accent-foreground: 30 34% 92%; --sidebar-ring: 342 43% 68%;
+  --popover: 344 23% 17%; --popover-foreground: 30 34% 92%; --popover-border: 344 15% 30%;
+  --primary: 342 43% 68%; --primary-foreground: 344 30% 14%; --secondary: 344 17% 25%;
+  --secondary-foreground: 30 34% 92%; --muted: 344 17% 25%; --muted-foreground: 28 16% 68%;
+  --accent: 342 43% 68%; --accent-foreground: 344 30% 14%; --destructive: 0 64% 57%;
+  --destructive-foreground: 0 0% 98%; --input: 344 15% 30%; --ring: 342 43% 68%;
+  --chart-1: 342 43% 68%; --chart-2: 25 38% 62%; --chart-3: 0 60% 62%;
+  --chart-4: 17 29% 72%; --chart-5: 344 35% 52%;
 }
 @layer base { body { font-family: var(--app-font-sans); } h1,h2,h3,.display { font-family: var(--app-font-serif); } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }

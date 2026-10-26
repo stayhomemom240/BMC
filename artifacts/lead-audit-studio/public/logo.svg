@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
-  <rect width="160" height="160" rx="36" fill="#29483e"/>
-  <path d="M79 125c1-28 2-45 4-65m-4 44c-16-3-27-12-34-28 17-2 30 4 37 19m2-19c3-18 14-30 33-36-1 20-12 34-33 41m-7 43h46" fill="none" stroke="#e5bd78" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+  <rect width="160" height="160" rx="36" fill="#7f2b41"/>
+  <circle cx="80" cy="80" r="59" fill="none" stroke="#e8c9d0" stroke-width="2"/>
+  <text x="80" y="99" text-anchor="middle" fill="#fff9f4" font-family="Georgia,serif" font-size="54" font-weight="700" letter-spacing="-4">BM</text>
 </svg>

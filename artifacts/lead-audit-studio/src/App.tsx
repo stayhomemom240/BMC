@@ -32,37 +32,37 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: '#315f52', colorForeground: '#263c35', colorMutedForeground: '#758078',
-    colorDanger: '#a94438', colorBackground: '#fffdf8', colorInput: '#fffdf8',
-    colorInputForeground: '#263c35', colorNeutral: '#d9d3c7', fontFamily: 'DM Sans, sans-serif',
+    colorPrimary: '#7f2b41', colorForeground: '#402a30', colorMutedForeground: '#806f71',
+    colorDanger: '#a23b44', colorBackground: '#fffdf9', colorInput: '#fffdf9',
+    colorInputForeground: '#402a30', colorNeutral: '#e4d7cd', fontFamily: 'DM Sans, sans-serif',
     borderRadius: '0.65rem',
   },
   elements: {
     rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[#fffdf8] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[#ded8cc]',
+    cardBox: 'bg-[#fffdf9] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[#e4d7cd]',
     card: '!shadow-none !border-0 !bg-transparent !rounded-none',
     footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[#263c35] font-semibold',
-    headerSubtitle: 'text-[#758078]',
-    socialButtonsBlockButtonText: 'text-[#263c35]',
-    formFieldLabel: 'text-[#384b43]',
-    footerActionLink: 'text-[#315f52]',
-    footerActionText: 'text-[#758078]',
-    dividerText: 'text-[#758078]',
-    identityPreviewEditButton: 'text-[#315f52]',
-    formFieldSuccessText: 'text-[#315f52]',
-    alertText: 'text-[#873d34]',
+    headerTitle: 'text-[#402a30] font-semibold',
+    headerSubtitle: 'text-[#806f71]',
+    socialButtonsBlockButtonText: 'text-[#402a30]',
+    formFieldLabel: 'text-[#654a50]',
+    footerActionLink: 'text-[#7f2b41]',
+    footerActionText: 'text-[#806f71]',
+    dividerText: 'text-[#806f71]',
+    identityPreviewEditButton: 'text-[#7f2b41]',
+    formFieldSuccessText: 'text-[#7f2b41]',
+    alertText: 'text-[#87343e]',
     logoBox: 'h-12',
     logoImage: 'max-h-10',
-    socialButtonsBlockButton: 'border-[#d9d3c7] bg-[#f8f5ed]',
-    formButtonPrimary: 'bg-[#315f52] hover:bg-[#244b40]',
-    formFieldInput: 'border-[#d9d3c7] bg-[#fffdf8] text-[#263c35]',
-    footerAction: 'text-[#758078]',
-    dividerLine: 'bg-[#e7e1d7]',
+    socialButtonsBlockButton: 'border-[#e4d7cd] bg-[#faf3ed]',
+    formButtonPrimary: 'bg-[#7f2b41] hover:bg-[#611f34]',
+    formFieldInput: 'border-[#e4d7cd] bg-[#fffdf9] text-[#402a30]',
+    footerAction: 'text-[#806f71]',
+    dividerLine: 'bg-[#eee1d8]',
     alert: 'border-[#ead0c8]',
-    otpCodeFieldInput: 'border-[#d9d3c7] bg-[#fffdf8]',
-    formFieldRow: 'text-[#384b43]',
-    main: 'text-[#263c35]',
+    otpCodeFieldInput: 'border-[#e4d7cd] bg-[#fffdf9]',
+    formFieldRow: 'text-[#654a50]',
+    main: 'text-[#402a30]',
   },
 };
 
@@ -83,7 +83,7 @@ function ClerkQueryClientCacheInvalidator() {
 
 function Protected({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
-  if (!isLoaded) return <div className="auth-loading"><div className="auth-loading-mark"/><span>Opening your field desk</span></div>;
+  if (!isLoaded) return <div className="auth-loading"><div className="auth-loading-mark"/><span>Opening your consulting workspace</span></div>;
   return isSignedIn ? <>{children}</> : <Redirect to="/sign-in"/>;
 }
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
@@ -100,8 +100,8 @@ function AppRoutes() {
     signInUrl={`${basePath}/sign-in`}
     signUpUrl={`${basePath}/sign-up`}
     localization={{
-      signIn: { start: { title: 'Welcome back', subtitle: 'Pick up where your good work left off.' } },
-      signUp: { start: { title: 'Set up your field desk', subtitle: 'A little structure for a lot of good work.' } },
+      signIn: { start: { title: 'Welcome back', subtitle: 'Pick up where your client work left off.' } },
+      signUp: { start: { title: 'Set up your Boss Mom workspace', subtitle: 'A thoughtful start for your client work.' } },
     }}
     routerPush={to => setLocation(stripBase(to))}
     routerReplace={to => setLocation(stripBase(to), { replace: true })}

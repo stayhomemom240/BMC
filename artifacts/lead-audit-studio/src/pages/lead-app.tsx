@@ -46,11 +46,11 @@ function Button({ children, onClick, variant = 'solid', type = 'button', disable
 }
 
 function Wordmark({ inverse = false }: { inverse?: boolean }) {
-  return <div className={cx('wordmark', inverse && 'wordmark-inverse')}><span className="mark-icon"><Sprout size={19} strokeWidth={2.1}/></span><span>Fieldnote<span className="wordmark-dot">.</span></span></div>;
+  return <div className={cx('wordmark', inverse && 'wordmark-inverse')} aria-label="Boss Mom Consulting"><span className="mark-icon">BM</span><span className="wordmark-name"><span>Boss Mom</span><i>Consulting</i></span></div>;
 }
 
 function PublicNav() {
-  return <header className="public-nav"><Link href="/" className="logo-link"><Wordmark/></Link><div className="nav-right"><span className="nav-note">Independent work, thoughtfully scoped.</span><Link href="/sign-in" className="text-link" data-testid="link-sign-in">Sign in <ArrowRight size={15}/></Link></div></header>;
+  return <header className="public-nav"><Link href="/" className="logo-link"><Wordmark/></Link><div className="nav-right"><span className="nav-note">Thoughtful support for your next step.</span><Link href="/sign-in" className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></Link></div></header>;
 }
 
 function AppShell({ children, active }: { children: React.ReactNode; active: string }) {
@@ -65,12 +65,12 @@ function AppShell({ children, active }: { children: React.ReactNode; active: str
   return <div className="workspace">
     <aside className={cx('sidebar', mobileOpen && 'sidebar-open')}>
       <Link href="/dashboard" className="side-brand"><Wordmark inverse/></Link>
-      <div className="side-caption">YOUR FIELD DESK</div>
+      <div className="side-caption">BOSS MOM CONSULTING</div>
       <nav className="side-nav">{links.map(item => <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={cx('side-link', active === item.href && 'side-link-active')} data-testid={`nav-${item.label.toLowerCase().replaceAll(' ', '-')}`}><item.icon size={17}/><span>{item.label}</span>{active === item.href && <span className="nav-indicator"/>}</Link>)}</nav>
       <div className="sidebar-bottom">
         <div className="sidebar-note"><span className="small-leaf"><Leaf size={15}/></span><p>Good work starts with good questions.</p></div>
         <button className="profile-control" onClick={() => signOut({ redirectUrl: basePath || '/' })} data-testid="button-sign-out">
-          <span className="avatar-initial">{user?.firstName?.[0] ?? 'F'}</span><span className="profile-text"><b>{user?.firstName || 'Your account'}</b><small>Sign out</small></span><ArrowDownRight size={15}/>
+          <span className="avatar-initial">{user?.firstName?.[0] ?? 'B'}</span><span className="profile-text"><b>{user?.firstName || 'Your account'}</b><small>Sign out</small></span><ArrowDownRight size={15}/>
         </button>
       </div>
     </aside>
@@ -82,11 +82,11 @@ function AppShell({ children, active }: { children: React.ReactNode; active: str
   </div>;
 }
 
-function LoadingPanel({ label = 'Gathering your field notes' }: { label?: string }) {
+function LoadingPanel({ label = 'Gathering your client details' }: { label?: string }) {
   return <div className="loading-card"><div className="skeleton skeleton-heading"/><div className="skeleton skeleton-line"/><div className="skeleton skeleton-line short"/><span className="loading-label"><LoaderCircle size={15}/>{label}</span></div>;
 }
 function ErrorPanel({ retry, message = 'We could not load this section.' }: { retry: () => void; message?: string }) {
-  return <div className="error-panel"><div className="error-stamp">!</div><div><b>Something interrupted the fieldwork.</b><p>{message}</p><Button variant="outline" onClick={retry}>Try again</Button></div></div>;
+  return <div className="error-panel"><div className="error-stamp">!</div><div><b>Something interrupted the workspace.</b><p>{message}</p><Button variant="outline" onClick={retry}>Try again</Button></div></div>;
 }
 function EmptyPanel({ title, detail, action }: { title: string; detail: string; action?: React.ReactNode }) {
   return <div className="empty-panel"><span className="empty-icon"><ClipboardCheck size={24}/></span><h3>{title}</h3><p>{detail}</p>{action}</div>;
@@ -114,27 +114,22 @@ export function HomePage() {
   return <div className="public-page field-grain">
     <PublicNav/>
     <section className="hero public-container">
-      <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>A better first conversation</span><h1>Start with the<br/><em>right questions.</em></h1><p className="hero-intro">A considered way to understand what a business needs — and a calmer way to keep every promising conversation moving.</p>
-        <div className="hero-actions"><Link href="/sign-up" className="btn btn-solid" data-testid="link-create-account">Set up your field desk <ArrowRight size={16}/></Link><Link href="/sign-in" className="btn btn-outline" data-testid="link-existing-account">Owner sign in</Link></div>
-        <div className="trust-note"><span className="trust-rule"/>Built for independent advisors and small studios</div>
+      <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>A better first conversation</span><h1>Start with the<br/><em>right questions.</em></h1><p className="hero-intro">A thoughtful way to clarify business needs, explore practical next steps, and keep every good conversation moving.</p>
+        <div className="hero-actions"><Link href="/sign-up" className="btn btn-solid" data-testid="link-create-account">Set up your lead workspace <ArrowRight size={16}/></Link><Link href="/sign-in" className="btn btn-outline" data-testid="link-existing-account">Owner sign in</Link></div>
+        <div className="trust-note"><span className="trust-rule"/>Thoughtful support for small businesses</div>
       </div>
-      <div className="hero-visual rise-in delay-2" aria-label="Field guide lead assessment preview">
-        <div className="paper-shadow"/>
-        <div className="field-card">
-          <div className="field-card-top"><span>FIELDNOTE / 01</span><span>CLIENT INTAKE</span></div>
-          <div className="field-card-title">A little context<br/>goes a long way.</div>
-          <div className="card-rule"/>
-          <div className="field-question"><i>01</i><div><b>What would you like to improve?</b><small>Tell us what good could look like.</small></div><CheckCircle2 size={18}/></div>
-          <div className="field-question"><i>02</i><div><b>Where are you starting from?</b><small>We’ll meet your business where it is.</small></div><span className="question-dot"/></div>
-          <div className="card-foot"><span>THOUGHTFUL BY DESIGN</span><Leaf size={16}/></div>
+      <div className="hero-visual rise-in delay-2" aria-label="Boss Mom Consulting office">
+        <div className="hero-photo-frame">
+          <img src="/boss-mom-office.jpeg" alt="Boss Mom Consulting office with an orchid, warm wood desk, and client seating"/>
+          <div className="hero-photo-caption"><span>Boss Mom Consulting</span><b>Good work starts with the right questions.</b></div>
         </div>
-        <div className="roundel"><span>FIELD</span><b>01</b><span>NOTES</span></div>
+        <div className="photo-seal" aria-hidden="true"><b>BM</b><span>CONSULTING</span></div>
       </div>
     </section>
     <section className="offer-strip"><div className="public-container offer-strip-inner"><span className="eyebrow">Three ways to begin</span><div className="offer-catalog"><div><MapPin/><b>Local SEO / GEO</b><small>Be found nearby, and beyond.</small></div><div><Leaf/><b>Zero-waste</b><small>Find practical room to waste less.</small></div><div><Target/><b>Open assessment</b><small>Make space for what’s next.</small></div></div></div></section>
     <section className="public-how public-container"><div><span className="eyebrow">A human-sized process</span><h2>Less chasing.<br/><em>More understanding.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Share the link</h3><p>Invite a prospect to a short, relevant assessment that feels like a conversation — not a form.</p></article><article><span>02</span><h3>See the whole picture</h3><p>Goals, current challenges and timing arrive together, with a useful starting summary.</p></article><article><span>03</span><h3>Follow through well</h3><p>Keep every lead organized from first hello to a clear next step.</p></article></div></section>
     <section className="closing-band"><div className="public-container closing-inner"><div><span className="eyebrow">A clearer first step</span><h2>Make room for<br/>better client work.</h2></div><Link href="/sign-up" className="btn btn-brass" data-testid="link-start-practice">Create your workspace <ArrowRight size={16}/></Link></div></section>
-    <footer className="public-footer public-container"><Wordmark/><span>Independent practice, with a little more structure.</span><Link href="/sign-in">Owner sign in <ArrowRight size={14}/></Link></footer>
+    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · clear next steps for your business.</span><Link href="/sign-in">Owner sign in <ArrowRight size={14}/></Link></footer>
   </div>;
 }
 
@@ -145,13 +140,13 @@ export function DashboardPage() {
   const data = insights.data as LeadInsights | undefined;
   const recent = [...(leads.data || [])].sort((a,b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0,5);
   return <AppShell active="/dashboard"><div className="page-content">
-    <div className="dashboard-topline"><span className="eyebrow"><span className="status-dot"/>YOUR PRACTICE, IN VIEW</span><span className="health-label"><span className={cx('health-dot', health.isError && 'health-bad')}/>{health.isError ? 'Connection needs attention' : 'Field desk ready'}</span></div>
+    <div className="dashboard-topline"><span className="eyebrow"><span className="status-dot"/>BOSS MOM CONSULTING / OVERVIEW</span><span className="health-label"><span className={cx('health-dot', health.isError && 'health-bad')}/>{health.isError ? 'Connection needs attention' : 'Workspace ready'}</span></div>
     <SectionHeading eyebrow="The overview" title="A good day to follow up." detail="A clear read on the conversations in your care.">
       <Link href="/settings" className="btn btn-outline"><Settings2 size={16}/> Practice settings</Link>
     </SectionHeading>
     {insights.isLoading ? <div className="stats-grid">{[1,2,3,4].map(x=><div className="stat-skeleton" key={x}/>)}</div> : insights.isError ? <ErrorPanel retry={() => insights.refetch()} message="Your overview could not be retrieved just now."/> :
-    <div className="stats-grid">
-      <div className="stat-card stat-primary"><span className="stat-caption">All conversations</span><b>{data?.totalLeads ?? 0}</b><small><BriefcaseBusiness size={14}/> Since your field desk began</small></div>
+      <div className="stats-grid">
+      <div className="stat-card stat-primary"><span className="stat-caption">All conversations</span><b>{data?.totalLeads ?? 0}</b><small><BriefcaseBusiness size={14}/> Since your workspace began</small></div>
       <div className="stat-card"><span className="stat-caption">Need a first reply</span><b>{data?.newLeads ?? 0}</b><small><MessageSquareText size={14}/> New in the lead book</small></div>
       <div className="stat-card"><span className="stat-caption">In motion</span><b>{data?.activeLeads ?? 0}</b><small><TrendingUp size={14}/> Contacted or proposal</small></div>
       <div className="stat-card"><span className="stat-caption">Won to date</span><b>{data?.wonLeads ?? 0}</b><small><ArrowUpRight size={14}/> {data?.winRate ?? 0}% conversion</small></div>
@@ -170,7 +165,7 @@ export function DashboardPage() {
 
 function ServiceBreakdown({ data }: { data: LeadInsights['serviceBreakdown'] }) {
   const max = Math.max(1, ...data.map(x=>x.count));
-  const colors: Record<ServiceType,string> = {'local-seo':'#38695b','zero-waste':'#bc8b48',general:'#7699a0'};
+  const colors: Record<ServiceType,string> = {'local-seo':'#8f2d43','zero-waste':'#c7768d',general:'#b98d6d'};
   return <div className="service-chart">{data.map(row=><div className="chart-row" key={row.serviceType}><div className="chart-label"><span>{offerLabels[row.serviceType]}</span><b>{row.count}</b></div><div className="chart-track"><i style={{ width: `${Math.max(4,row.count/max*100)}%`, background: colors[row.serviceType] }}/></div></div>)}</div>;
 }
 
@@ -234,7 +229,7 @@ export function LeadDetailPage({ id }: { id?: string }) {
   if (leadQuery.isError || !lead) return <AppShell active="/leads"><div className="page-content"><Link href="/leads" className="back-link"><ArrowLeft size={15}/> Back to lead book</Link><ErrorPanel retry={()=>leadQuery.refetch()} message="This conversation may have moved or could not be opened."/></div></AppShell>;
   return <AppShell active="/leads"><div className="page-content detail-page">
     <Link href="/leads" className="back-link"><ArrowLeft size={15}/> Back to lead book</Link>
-    <section className="detail-cover"><div className="detail-heading"><span className="lead-avatar lead-avatar-large">{lead.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</span><div><span className="eyebrow">FIELD REPORT / {String(lead.id).padStart(4,'0')}</span><h1>{lead.name}</h1><div className="detail-meta"><span>{lead.company || lead.email}</span><span className="meta-divider">/</span><OfferMark type={lead.serviceType}/></div></div><div className="detail-actions"><Button variant="danger" onClick={remove} disabled={deleteLead.isPending}><Trash2 size={15}/>{deleteLead.isPending ? 'Deleting…' : 'Delete lead'}</Button></div></div>
+     <section className="detail-cover"><div className="detail-heading"><span className="lead-avatar lead-avatar-large">{lead.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</span><div><span className="eyebrow">CLIENT BRIEF / {String(lead.id).padStart(4,'0')}</span><h1>{lead.name}</h1><div className="detail-meta"><span>{lead.company || lead.email}</span><span className="meta-divider">/</span><OfferMark type={lead.serviceType}/></div></div><div className="detail-actions"><Button variant="danger" onClick={remove} disabled={deleteLead.isPending}><Trash2 size={15}/>{deleteLead.isPending ? 'Deleting…' : 'Delete lead'}</Button></div></div>
       <div className="detail-bottom"><div><span className="eyebrow">ARRIVED</span><b>{dateLabel(lead.createdAt)}</b></div><div><span className="eyebrow">READINESS</span><b>{lead.readinessScore}<small> / 100</small></b></div><div><span className="eyebrow">TIMELINE</span><b>{lead.timeline}</b></div><div><span className="eyebrow">CURRENT STAGE</span><StagePill stage={lead.stage}/></div></div>
     </section>
     {deleteLead.isError && <div className="inline-error">This lead could not be deleted. Please try again.</div>}
@@ -243,7 +238,7 @@ export function LeadDetailPage({ id }: { id?: string }) {
         <div className="report-prompt"><div><span className="eyebrow">THE GOAL</span><p>{lead.goals}</p></div><div><span className="eyebrow">THE CHALLENGE</span><p>{lead.challenge}</p></div></div>
         <div className="report-contact"><span><UserRound size={15}/>{lead.name}</span><a href={`mailto:${lead.email}`}>{lead.email} <ExternalLink size={13}/></a>{lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noreferrer"><Globe2 size={14}/>Website</a>}</div>
       </section>
-      <section className="paper-panel notes-panel"><div className="panel-heading"><div><span className="eyebrow">PRIVATE TO YOUR PRACTICE</span><h2>Working notes</h2></div><MessageSquareText size={19}/></div><textarea value={notesValue} onChange={e=>setNotes(e.target.value)} placeholder="Capture context, questions to ask, or a next step…" rows={5} data-testid="textarea-lead-notes"/><div className="notes-bottom"><small>Only visible in your field desk.</small><Button onClick={()=>update({notes:notesValue})} disabled={updateLead.isPending}>{updateLead.isPending ? 'Saving…' : 'Save notes'}</Button></div>{updateLead.isError && <div className="inline-error">Notes could not be saved.</div>}</section>
+       <section className="paper-panel notes-panel"><div className="panel-heading"><div><span className="eyebrow">PRIVATE TO YOUR PRACTICE</span><h2>Working notes</h2></div><MessageSquareText size={19}/></div><textarea value={notesValue} onChange={e=>setNotes(e.target.value)} placeholder="Capture context, questions to ask, or a next step…" rows={5} data-testid="textarea-lead-notes"/><div className="notes-bottom"><small>Only visible in your workspace.</small><Button onClick={()=>update({notes:notesValue})} disabled={updateLead.isPending}>{updateLead.isPending ? 'Saving…' : 'Save notes'}</Button></div>{updateLead.isError && <div className="inline-error">Notes could not be saved.</div>}</section>
     </div><aside className="detail-side"><span className="eyebrow">NEXT STEP</span><h3>Keep the conversation moving.</h3><p>Move this lead as you follow up. The right stage makes tomorrow’s list clearer.</p><label className="stage-select-label">Pipeline stage<select value={lead.stage} disabled={updateLead.isPending} onChange={e=>update({stage:e.target.value as LeadStage})} data-testid="select-lead-stage">{stages.map(stage=><option key={stage} value={stage}>{stageLabel[stage]}</option>)}</select></label><div className="pipeline-steps">{stages.slice(0,4).map((stage,index)=><div className={cx('pipeline-step', stages.indexOf(lead.stage)>=index && lead.stage !== 'lost' && 'pipeline-done')} key={stage}><span>{stages.indexOf(lead.stage)>index ? <Check size={12}/> : index+1}</span>{stageLabel[stage]}</div>)}</div><div className="side-tip"><Sprout size={17}/><span>A timely, specific follow-up is usually more useful than a perfect one.</span></div>{updateLead.isError && <div className="inline-error">Stage could not be changed.</div>}</aside></div>
   </div></AppShell>;
 }
@@ -258,7 +253,7 @@ export function SettingsPage() {
   const value = form ?? (settings ? {
     businessName: settings.businessName, tagline: settings.tagline, enabledServices: settings.enabledServices,
     websiteUrl: settings.websiteUrl || '', fiverrUrl: settings.fiverrUrl || '',
-  } : { businessName: '', tagline: '', enabledServices: ['local-seo','zero-waste','general'] as ServiceType[], websiteUrl: '', fiverrUrl: '' });
+  } : { businessName: 'Boss Mom Consulting', tagline: '', enabledServices: ['local-seo','zero-waste','general'] as ServiceType[], websiteUrl: '', fiverrUrl: '' });
   const publicUrl = `${window.location.origin}${basePath}/intake?owner=${encodeURIComponent(user?.id || '')}`;
   const patch = (next: Partial<LeadSettingsInput>) => setForm({...value, ...next});
   async function copyLink() {
@@ -277,7 +272,7 @@ export function SettingsPage() {
   return <AppShell active="/settings"><div className="page-content settings-page">
     <SectionHeading eyebrow="Practice settings" title="Set the tone." detail="Your practice details shape the first impression prospects receive."/>
     <form onSubmit={submit} className="settings-form">
-      <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">01</span><div><h2>Your practice</h2><p>A clear name and a line about the work you do.</p></div></div><div className="form-grid"><label className="form-field full"><span>Business or practice name</span><input required maxLength={160} value={value.businessName} onChange={e=>patch({businessName:e.target.value})} placeholder="e.g. Northline Studio" data-testid="input-business-name"/></label><label className="form-field full"><span>Short introduction <small>Up to 500 characters</small></span><textarea maxLength={500} rows={3} value={value.tagline} onChange={e=>patch({tagline:e.target.value})} placeholder="A useful sentence about who you help and how." data-testid="input-tagline"/></label></div></section>
+     <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">01</span><div><h2>Your business</h2><p>A clear name and a line about the work you do.</p></div></div><div className="form-grid"><label className="form-field full"><span>Business name</span><input required maxLength={160} value={value.businessName} onChange={e=>patch({businessName:e.target.value})} placeholder="Boss Mom Consulting" data-testid="input-business-name"/></label><label className="form-field full"><span>Short introduction <small>Up to 500 characters</small></span><textarea maxLength={500} rows={3} value={value.tagline} onChange={e=>patch({tagline:e.target.value})} placeholder="Local visibility, zero-waste goals, and practical next steps for small businesses." data-testid="input-tagline"/></label></div></section>
       <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">02</span><div><h2>Choose your assessments</h2><p>Keep the intake focused on the kind of work you take on.</p></div></div><div className="service-options">
         {(['local-seo','zero-waste','general'] as ServiceType[]).map((service,index)=><label className={cx('service-option', value.enabledServices.includes(service) && 'service-option-active')} key={service}><input type="checkbox" checked={value.enabledServices.includes(service)} onChange={e=>patch({enabledServices:e.target.checked ? [...value.enabledServices,service] : value.enabledServices.filter(x=>x!==service)})} data-testid={`checkbox-service-${service}`}/><span className="service-option-icon">{index === 0 ? <MapPin/> : index === 1 ? <Leaf/> : <Target/>}</span><span><b>{offerLabels[service]}</b><small>{service==='local-seo' ? 'Google Business Profile, local citations and on-page visibility.' : service==='zero-waste' ? 'Baseline, source reduction, reuse and practical diversion.' : 'Goals, priorities, business context and next steps.'}</small></span><span className="option-check"><Check size={14}/></span></label>)}
       </div>{value.enabledServices.length===0 && <div className="inline-error">Choose at least one assessment to continue.</div>}</section>
@@ -321,7 +316,7 @@ export function IntakePage() {
   return <div className="intake-page field-grain">
     <header className="intake-top"><Link href="/" className="logo-link"><Wordmark/></Link><span className="intake-kicker">A THOUGHTFUL FIRST STEP</span></header>
     {profileQuery.isLoading ? <div className="intake-centered"><LoadingPanel label="Opening your assessment"/></div> :
-      profileQuery.isError || !ownerId || !profile ? <div className="intake-centered"><div className="intake-error"><span className="empty-icon"><FileText/></span><span className="eyebrow">ASSESSMENT NOT FOUND</span><h1>We couldn’t find this field guide.</h1><p>Check the link you received, or ask the advisor to share a fresh one.</p><Link href="/" className="btn btn-outline"><ArrowLeft size={15}/> Return to Fieldnote</Link></div></div> :
+       profileQuery.isError || !ownerId || !profile ? <div className="intake-centered"><div className="intake-error"><span className="empty-icon"><FileText/></span><span className="eyebrow">ASSESSMENT NOT FOUND</span><h1>We couldn’t find this assessment link.</h1><p>Check the link you received, or ask Boss Mom Consulting to share a fresh one.</p><Link href="/" className="btn btn-outline"><ArrowLeft size={15}/> Return to Boss Mom Consulting</Link></div></div> :
       result ? <AssessmentResult result={result} profile={profile}/> :
       <main className="intake-content rise-in"><div className="intake-intro"><span className="eyebrow"><span className="eyebrow-line"/>A client assessment by {profile.businessName}</span><h1>Good work starts<br/>with <em>good questions.</em></h1><p>{profile.tagline || 'A few details help us understand your business and make our first conversation useful.'}</p><div className="intake-links">{profile.websiteUrl && <a href={profile.websiteUrl} target="_blank" rel="noreferrer"><Globe2 size={14}/>Website</a>}{profile.fiverrUrl && <a href={profile.fiverrUrl} target="_blank" rel="noreferrer"><ExternalLink size={14}/>Fiverr</a>}</div></div>
         <div className="assessment-card"><div className="assessment-progress"><div className="progress-label"><span>ASSESSMENT</span><span>{step+1} <i>/</i> 3</span></div><div className="progress-track"><i style={{width:`${(step+1)/3*100}%`}}/></div></div>
@@ -333,8 +328,8 @@ export function IntakePage() {
             {step===2 && <div className="assessment-step"><span className="eyebrow">03 / TIMING & REVIEW</span><h2>When are you hoping to begin?</h2><p className="step-description">There’s no wrong answer. This helps us suggest a realistic next step.</p><div className="timeline-options">{['As soon as possible','Within the next month','In 1–3 months','Just exploring for now'].map(option=><button type="button" key={option} onClick={()=>update('timeline',option)} className={cx('timeline-option',form.timeline===option&&'timeline-option-active')}><span className="timeline-radio">{form.timeline===option&&<i/>}</span>{option}</button>)}</div><div className="privacy-note"><span><CheckCircle2 size={17}/></span><p>Your details are shared only with <b>{profile.businessName}</b>, so they can prepare for a useful first conversation.</p></div></div>}
             {submit.isError && <div className="inline-error intake-submit-error">We couldn’t send your assessment. Please try again.</div>}
             <div className="assessment-actions">{step>0 ? <Button variant="quiet" onClick={previous}><ArrowLeft size={15}/> Back</Button> : <span className="assessment-time">ABOUT 2 MINUTES</span>}{step<2 ? <Button onClick={next} disabled={!canContinue}>Continue <ArrowRight size={15}/></Button> : <Button type="submit" disabled={submit.isPending}>{submit.isPending?'Sending assessment…':'Send assessment'} <ArrowRight size={15}/></Button>}</div>
-          </form>
-        </div><div className="intake-foot"><span>FIELDNOTE / CLIENT INTAKE</span><span>Made for useful beginnings <Sprout size={13}/></span></div>
+         </form>
+         </div><div className="intake-foot"><span>BOSS MOM CONSULTING / CLIENT INTAKE</span><span>Made for useful beginnings <Sprout size={13}/></span></div>
       </main>}
   </div>;
 }
@@ -345,7 +340,7 @@ function AssessmentResult({ result, profile }: { result: PublicLeadResult; profi
     <span className="eyebrow">ASSESSMENT RECEIVED</span>
     <h1>{result.reportTitle || 'A useful first step.'}</h1>
     <p className="result-lead">Thank you for sharing what matters to your business. {result.businessName} now has a clearer picture of where to begin.</p>
-    <div className="result-summary"><span className="eyebrow">YOUR FIELD NOTE</span><p>{result.reportSummary}</p></div>
+    <div className="result-summary"><span className="eyebrow">YOUR CONSULTING BRIEF</span><p>{result.reportSummary}</p></div>
     <div className="readiness-row"><span>BRIEF READINESS</span><div className="readiness-meter"><i style={{width:`${result.readinessScore}%`}}/></div><b>{result.readinessScore}<small>/100</small></b></div>
     <p className="score-caption">Based on the detail in your answers—not a technical audit score.</p>
     <div className="result-next"><Sprout size={19}/><span>Your assessment has been saved for {result.businessName} to review.</span></div>
@@ -354,13 +349,13 @@ function AssessmentResult({ result, profile }: { result: PublicLeadResult; profi
       {profile.fiverrUrl && <a className="btn btn-outline" href={profile.fiverrUrl} target="_blank" rel="noreferrer">Explore Fiverr services <ExternalLink size={14}/></a>}
       <Button className="result-print" variant="outline" onClick={() => window.print()}>Print / save as PDF</Button>
     </div>
-    <Link href="/" className="result-back">A little more about Fieldnote <ArrowRight size={14}/></Link>
+    <Link href="/" className="result-back">More about Boss Mom Consulting <ArrowRight size={14}/></Link>
   </main>;
 }
 
 export function SignInPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">FIELDNOTE / INDEPENDENT PRACTICE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Fieldnote</Link><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`}/></div></div>;
+  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`}/></div></div>;
 }
 export function SignUpPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">A BETTER FIRST CONVERSATION</span><h1>Make space for<br/>better client work.</h1><p>Set up your practice profile and build an intake that asks the right things.</p></div><span className="auth-aside-footer">FIELDNOTE / INDEPENDENT PRACTICE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Fieldnote</Link><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`}/></div></div>;
+  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">A BETTER FIRST CONVERSATION</span><h1>Make space for<br/>better client work.</h1><p>Set up your practice profile and build an intake that asks the right things.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`}/></div></div>;
 }
