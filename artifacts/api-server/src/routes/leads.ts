@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { Router, type IRouter, type RequestHandler } from "express";
 import {
@@ -11,6 +11,7 @@ import {
   GetLeadSettingsResponse,
   GetPublicLeadSettingsParams,
   GetPublicLeadSettingsResponse,
+  GetPublicWebsiteProfileResponse,
   ListLeadsResponse,
   SubmitPublicLeadBody,
   SubmitPublicLeadResponse,
@@ -310,15 +311,47 @@ router.put("/settings", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const ownerId = res.locals.ownerId as string;
-  const [settings] = await db
-    .insert(leadSettingsTable)
-    .values({ ownerId, ...parsed.data })
-    .onConflictDoUpdate({
-      target: leadSettingsTable.ownerId,
-      set: { ...parsed.data, updatedAt: new Date() },
-    })
-    .returning();
+  const settings = await db.transaction(async (tx) => {
+    if (parsed.data.publishOnWebsite) {
+      await tx
+        .update(leadSettingsTable)
+        .set({ publishOnWebsite: false })
+        .where(ne(leadSettingsTable.ownerId, ownerId));
+    }
+    const [saved] = await tx
+      .insert(leadSettingsTable)
+      .values({ ownerId, ...parsed.data })
+      .onConflictDoUpdate({
+        target: leadSettingsTable.ownerId,
+        set: { ...parsed.data, updatedAt: new Date() },
+      })
+      .returning();
+    return saved;
+  });
   res.json(UpdateLeadSettingsResponse.parse(settings));
+});
+
+router.get("/public/website-profile", async (_req, res): Promise<void> => {
+  const [settings] = await db
+    .select()
+    .from(leadSettingsTable)
+    .where(eq(leadSettingsTable.publishOnWebsite, true))
+    .orderBy(desc(leadSettingsTable.updatedAt))
+    .limit(1);
+  if (!settings) {
+    res.status(404).json({ error: "No business profile is published on this website." });
+    return;
+  }
+  res.json(
+    GetPublicWebsiteProfileResponse.parse({
+      ownerId: settings.ownerId,
+      businessName: settings.businessName,
+      tagline: settings.tagline,
+      enabledServices: settings.enabledServices,
+      websiteUrl: settings.websiteUrl,
+      fiverrUrl: settings.fiverrUrl,
+    }),
+  );
 });
 
 router.get(
@@ -338,6 +371,7 @@ router.get(
       return;
     }
     const publicSettings = {
+      ownerId: params.data.ownerId,
       businessName: settings.businessName,
       tagline: settings.tagline,
       enabledServices: settings.enabledServices,

@@ -215,6 +215,7 @@ export const GetLeadSettingsResponse = zod.object({
   "businessName": zod.string(),
   "tagline": zod.string(),
   "enabledServices": zod.array(zod.enum(['local-seo', 'zero-waste', 'general'])),
+  "publishOnWebsite": zod.boolean(),
   "websiteUrl": zod.string().url().nullish(),
   "fiverrUrl": zod.string().url().nullish()
 })
@@ -234,6 +235,7 @@ export const UpdateLeadSettingsBody = zod.object({
   "businessName": zod.string().min(1).max(updateLeadSettingsBodyBusinessNameMax),
   "tagline": zod.string().max(updateLeadSettingsBodyTaglineMax),
   "enabledServices": zod.array(zod.enum(['local-seo', 'zero-waste', 'general'])).min(1),
+  "publishOnWebsite": zod.boolean(),
   "websiteUrl": zod.string().url().nullish(),
   "fiverrUrl": zod.string().url().nullish()
 })
@@ -243,6 +245,7 @@ export const UpdateLeadSettingsResponse = zod.object({
   "businessName": zod.string(),
   "tagline": zod.string(),
   "enabledServices": zod.array(zod.enum(['local-seo', 'zero-waste', 'general'])),
+  "publishOnWebsite": zod.boolean(),
   "websiteUrl": zod.string().url().nullish(),
   "fiverrUrl": zod.string().url().nullish()
 })
@@ -256,6 +259,20 @@ export const GetPublicLeadSettingsParams = zod.object({
 })
 
 export const GetPublicLeadSettingsResponse = zod.object({
+  "ownerId": zod.string(),
+  "businessName": zod.string(),
+  "tagline": zod.string(),
+  "enabledServices": zod.array(zod.enum(['local-seo', 'zero-waste', 'general'])),
+  "websiteUrl": zod.string().url().nullish(),
+  "fiverrUrl": zod.string().url().nullish()
+})
+
+
+/**
+ * @summary Get the business profile published on the public website
+ */
+export const GetPublicWebsiteProfileResponse = zod.object({
+  "ownerId": zod.string(),
   "businessName": zod.string(),
   "tagline": zod.string(),
   "enabledServices": zod.array(zod.enum(['local-seo', 'zero-waste', 'general'])),

@@ -8,6 +8,7 @@
 import type { ServiceType } from './serviceType';
 
 export interface PublicLeadSettings {
+  ownerId: string;
   businessName: string;
   tagline: string;
   enabledServices: ServiceType[];

@@ -186,6 +186,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /public/website-profile:
+    get:
+      operationId: getPublicWebsiteProfile
+      tags: [public]
+      summary: Get the business profile published on the public website
+      responses:
+        "200":
+          description: Public-facing website profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLeadSettings"
+        "404":
+          description: No profile is published on the website
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /public/leads:
     post:
       operationId: submitPublicLead
@@ -291,9 +309,10 @@ components:
         enabledServices:
           type: array
           items: { $ref: "#/components/schemas/ServiceType" }
+        publishOnWebsite: { type: boolean }
         websiteUrl: { type: ["string", "null"], format: uri }
         fiverrUrl: { type: ["string", "null"], format: uri }
-      required: [ownerId, businessName, tagline, enabledServices]
+      required: [ownerId, businessName, tagline, enabledServices, publishOnWebsite]
     LeadSettingsInput:
       type: object
       properties:
@@ -303,12 +322,14 @@ components:
           type: array
           minItems: 1
           items: { $ref: "#/components/schemas/ServiceType" }
+        publishOnWebsite: { type: boolean }
         websiteUrl: { type: ["string", "null"], format: uri }
         fiverrUrl: { type: ["string", "null"], format: uri }
-      required: [businessName, tagline, enabledServices]
+      required: [businessName, tagline, enabledServices, publishOnWebsite]
     PublicLeadSettings:
       type: object
       properties:
+        ownerId: { type: string }
         businessName: { type: string }
         tagline: { type: string }
         enabledServices:
@@ -316,7 +337,7 @@ components:
           items: { $ref: "#/components/schemas/ServiceType" }
         websiteUrl: { type: ["string", "null"], format: uri }
         fiverrUrl: { type: ["string", "null"], format: uri }
-      required: [businessName, tagline, enabledServices]
+      required: [ownerId, businessName, tagline, enabledServices]
     PublicLeadInput:
       type: object
       properties:

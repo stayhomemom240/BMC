@@ -17,6 +17,7 @@ export interface LeadSettingsInput {
   tagline: string;
   /** @minItems 1 */
   enabledServices: ServiceType[];
+  publishOnWebsite: boolean;
   /** @nullable */
   websiteUrl?: string | null;
   /** @nullable */

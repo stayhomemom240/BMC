@@ -1,5 +1,6 @@
 import { createInsertSchema } from "drizzle-zod";
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const leadSettingsTable = pgTable("lead_audit_settings", {
@@ -12,13 +13,18 @@ export const leadSettingsTable = pgTable("lead_audit_settings", {
     .array()
     .notNull()
     .default(["local-seo", "zero-waste", "general"]),
+  publishOnWebsite: boolean("publish_on_website").notNull().default(false),
   websiteUrl: text("website_url"),
   fiverrUrl: text("fiverr_url"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  uniqueIndex("lead_audit_settings_single_public_site_idx")
+    .on(table.publishOnWebsite)
+    .where(sql`${table.publishOnWebsite} = true`),
+]);
 
 export const insertLeadSettingsSchema = createInsertSchema(
   leadSettingsTable,

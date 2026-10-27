@@ -109,6 +109,7 @@ function AppRoutes() {
     <ClerkQueryClientCacheInvalidator/>
     <RoutedErrorBoundary><Switch>
       <Route path="/" component={HomePage}/>
+      <Route path="/about" component={HomePage}/>
       <Route path="/sign-in/*?" component={SignInPage}/>
       <Route path="/sign-up/*?" component={SignUpPage}/>
       <Route path="/intake" component={IntakePage}/>

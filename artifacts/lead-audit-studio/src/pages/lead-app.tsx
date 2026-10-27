@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import './lead-app.css';
-import { Link, useLocation, Redirect } from 'wouter';
-import { useAuth, useClerk, useUser, SignIn, SignUp } from '@clerk/react';
+import { Link, useLocation } from 'wouter';
+import { useClerk, useUser, SignIn, SignUp } from '@clerk/react';
 import {
   Activity, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BriefcaseBusiness,
   Check, CheckCircle2, ChevronDown, ClipboardCheck, Copy, ExternalLink, FileText,
@@ -12,8 +12,9 @@ import {
 } from 'lucide-react';
 import {
   getGetLeadInsightsQueryKey, getGetLeadQueryKey, getGetLeadSettingsQueryKey, getGetPublicLeadSettingsQueryKey,
+  getGetPublicWebsiteProfileQueryKey,
   getListLeadsQueryKey, useCreateLead, useDeleteLead, useGetLead,
-  useGetLeadInsights, useGetLeadSettings, useGetPublicLeadSettings,
+  useGetLeadInsights, useGetLeadSettings, useGetPublicLeadSettings, useGetPublicWebsiteProfile,
   useHealthCheck, useListLeads, useSubmitPublicLead, useUpdateLead,
   useUpdateLeadSettings,
 } from '@workspace/api-client-react';
@@ -49,8 +50,8 @@ function Wordmark({ inverse = false }: { inverse?: boolean }) {
   return <div className={cx('wordmark', inverse && 'wordmark-inverse')} aria-label="Boss Mom Consulting"><span className="mark-icon">BM</span><span className="wordmark-name"><span>Boss Mom</span><i>Consulting</i></span></div>;
 }
 
-function PublicNav() {
-  return <header className="public-nav"><Link href="/" className="logo-link"><Wordmark/></Link><div className="nav-right"><span className="nav-note">Thoughtful support for your next step.</span><Link href="/sign-in" className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></Link></div></header>;
+function PublicNav({ showIntake = false }: { showIntake?: boolean }) {
+  return <header className="public-nav"><Link href="/" className="logo-link"><Wordmark/></Link><nav className="public-nav-links" aria-label="Main navigation"><Link href="/about">About</Link><a href="/#services">Services</a>{showIntake && <Link href="/intake" className="public-nav-cta">Start an assessment</Link>}<Link href="/sign-in" className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></Link></nav></header>;
 }
 
 function AppShell({ children, active }: { children: React.ReactNode; active: string }) {
@@ -109,14 +110,16 @@ function LeadRow({ lead }: { lead: Lead }) {
 }
 
 export function HomePage() {
-  const { isLoaded, isSignedIn } = useAuth();
-  if (isLoaded && isSignedIn) return <Redirect to="/dashboard"/>;
+  const publicProfileQuery = useGetPublicWebsiteProfile({
+    query: { retry: false, staleTime: 30_000 },
+  });
+  const profile = publicProfileQuery.data;
   return <div className="public-page field-grain">
-    <PublicNav/>
-    <section className="hero public-container">
-      <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>A better first conversation</span><h1>Start with the<br/><em>right questions.</em></h1><p className="hero-intro">A thoughtful way to clarify business needs, explore practical next steps, and keep every good conversation moving.</p>
-        <div className="hero-actions"><Link href="/sign-up" className="btn btn-solid" data-testid="link-create-account">Set up your lead workspace <ArrowRight size={16}/></Link><Link href="/sign-in" className="btn btn-outline" data-testid="link-existing-account">Owner sign in</Link></div>
-        <div className="trust-note"><span className="trust-rule"/>Thoughtful support for small businesses</div>
+    <PublicNav showIntake={!!profile}/>
+    <section className="hero public-container" id="about">
+      <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>Boss Mom Consulting</span><h1>Practical support<br/><em>for your business.</em></h1><p className="hero-intro">Thoughtful consulting for local visibility, sustainability, and the next business decision in front of you. Start with what matters most and leave with a clearer next step.</p>
+        <div className="hero-actions">{profile && <Link href="/intake" className="btn btn-solid" data-testid="link-public-intake">Tell me about your business <ArrowRight size={16}/></Link>}{profile?.fiverrUrl && <a href={profile.fiverrUrl} className="btn btn-outline" target="_blank" rel="noopener noreferrer">Explore services on Fiverr <ExternalLink size={15}/></a>}</div>
+        <div className="trust-note"><span className="trust-rule"/>Flexible support for small businesses</div>
       </div>
       <div className="hero-visual rise-in delay-2" aria-label="Boss Mom Consulting office">
         <div className="hero-photo-frame">
@@ -126,10 +129,10 @@ export function HomePage() {
         <div className="photo-seal" aria-hidden="true"><b>BM</b><span>CONSULTING</span></div>
       </div>
     </section>
-    <section className="offer-strip"><div className="public-container offer-strip-inner"><span className="eyebrow">Three ways to begin</span><div className="offer-catalog"><div><MapPin/><b>Local SEO / GEO</b><small>Be found nearby, and beyond.</small></div><div><Leaf/><b>Zero-waste</b><small>Find practical room to waste less.</small></div><div><Target/><b>Open assessment</b><small>Make space for what’s next.</small></div></div></div></section>
-    <section className="public-how public-container"><div><span className="eyebrow">A human-sized process</span><h2>Less chasing.<br/><em>More understanding.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Share the link</h3><p>Invite a prospect to a short, relevant assessment that feels like a conversation — not a form.</p></article><article><span>02</span><h3>See the whole picture</h3><p>Goals, current challenges and timing arrive together, with a useful starting summary.</p></article><article><span>03</span><h3>Follow through well</h3><p>Keep every lead organized from first hello to a clear next step.</p></article></div></section>
-    <section className="closing-band"><div className="public-container closing-inner"><div><span className="eyebrow">A clearer first step</span><h2>Make room for<br/>better client work.</h2></div><Link href="/sign-up" className="btn btn-brass" data-testid="link-start-practice">Create your workspace <ArrowRight size={16}/></Link></div></section>
-    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · clear next steps for your business.</span><Link href="/sign-in">Owner sign in <ArrowRight size={14}/></Link></footer>
+    <section className="offer-strip" id="services"><div className="public-container offer-strip-inner"><span className="eyebrow">Products &amp; services</span><div className="offer-catalog"><div><MapPin/><b>Local SEO / GEO</b><small>Improve local search visibility, business listings, and your presence in AI-powered search.</small></div><div><Leaf/><b>Zero-waste consulting</b><small>Review waste streams and find realistic opportunities to reduce, reuse, and divert.</small></div><div><Target/><b>Business needs assessment</b><small>Clarify priorities, goals, and the right scope for your next project.</small></div></div></div></section>
+    <section className="public-how public-container"><div><span className="eyebrow">A practical approach</span><h2>Clear priorities.<br/><em>Useful next steps.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Start with your goals</h3><p>Share what your business is working toward and what is getting in the way.</p></article><article><span>02</span><h3>Focus on your needs</h3><p>Choose local visibility, zero-waste support, or a broader business assessment.</p></article><article><span>03</span><h3>Choose how to work together</h3><p>Review the suggested next step, then continue through the website or Fiverr.</p></article></div></section>
+    <section className="closing-band"><div className="public-container closing-inner"><div><span className="eyebrow">Ready to talk about your business?</span><h2>Start with a clear<br/>first conversation.</h2></div>{profile ? <Link href="/intake" className="btn btn-brass">Start your assessment <ArrowRight size={16}/></Link> : <p className="website-intake-note">The online assessment is being prepared. Please check back soon.</p>}</div></section>
+    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · practical support for your next step.</span><Link href="/sign-in">Owner sign in <ArrowRight size={14}/></Link></footer>
   </div>;
 }
 
@@ -252,8 +255,8 @@ export function SettingsPage() {
   const [form, setForm] = useState<LeadSettingsInput | null>(null);
   const value = form ?? (settings ? {
     businessName: settings.businessName, tagline: settings.tagline, enabledServices: settings.enabledServices,
-    websiteUrl: settings.websiteUrl || '', fiverrUrl: settings.fiverrUrl || '',
-  } : { businessName: 'Boss Mom Consulting', tagline: '', enabledServices: ['local-seo','zero-waste','general'] as ServiceType[], websiteUrl: '', fiverrUrl: '' });
+    publishOnWebsite: settings.publishOnWebsite, websiteUrl: settings.websiteUrl || '', fiverrUrl: settings.fiverrUrl || '',
+  } : { businessName: 'Boss Mom Consulting', tagline: '', enabledServices: ['local-seo','zero-waste','general'] as ServiceType[], publishOnWebsite: false, websiteUrl: '', fiverrUrl: '' });
   const publicUrl = `${window.location.origin}${basePath}/intake?owner=${encodeURIComponent(user?.id || '')}`;
   const patch = (next: Partial<LeadSettingsInput>) => setForm({...value, ...next});
   async function copyLink() {
@@ -264,7 +267,12 @@ export function SettingsPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     saveSettings.mutate({ data: { ...value, websiteUrl: value.websiteUrl || null, fiverrUrl: value.fiverrUrl || null } }, {
-      onSuccess: saved => { queryClient.setQueryData(getGetLeadSettingsQueryKey(), saved); queryClient.invalidateQueries({ queryKey: getGetLeadSettingsQueryKey() }); setForm(null); },
+      onSuccess: saved => {
+        queryClient.setQueryData(getGetLeadSettingsQueryKey(), saved);
+        queryClient.invalidateQueries({ queryKey: getGetLeadSettingsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetPublicWebsiteProfileQueryKey() });
+        setForm(null);
+      },
     });
   }
   if (settingsQuery.isLoading) return <AppShell active="/settings"><div className="page-content"><LoadingPanel label="Loading practice details"/></div></AppShell>;
@@ -277,7 +285,7 @@ export function SettingsPage() {
         {(['local-seo','zero-waste','general'] as ServiceType[]).map((service,index)=><label className={cx('service-option', value.enabledServices.includes(service) && 'service-option-active')} key={service}><input type="checkbox" checked={value.enabledServices.includes(service)} onChange={e=>patch({enabledServices:e.target.checked ? [...value.enabledServices,service] : value.enabledServices.filter(x=>x!==service)})} data-testid={`checkbox-service-${service}`}/><span className="service-option-icon">{index === 0 ? <MapPin/> : index === 1 ? <Leaf/> : <Target/>}</span><span><b>{offerLabels[service]}</b><small>{service==='local-seo' ? 'Google Business Profile, local citations and on-page visibility.' : service==='zero-waste' ? 'Baseline, source reduction, reuse and practical diversion.' : 'Goals, priorities, business context and next steps.'}</small></span><span className="option-check"><Check size={14}/></span></label>)}
       </div>{value.enabledServices.length===0 && <div className="inline-error">Choose at least one assessment to continue.</div>}</section>
       <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">03</span><div><h2>Places to find you</h2><p>Optional links are shown with your public intake page.</p></div></div><div className="form-grid"><label className="form-field"><span><Globe2 size={15}/>Website</span><input type="url" value={value.websiteUrl || ''} onChange={e=>patch({websiteUrl:e.target.value})} placeholder="https://yourstudio.com" data-testid="input-website-url"/></label><label className="form-field"><span><ExternalLink size={15}/>Fiverr profile</span><input type="url" value={value.fiverrUrl || ''} onChange={e=>patch({fiverrUrl:e.target.value})} placeholder="https://www.fiverr.com/…" data-testid="input-fiverr-url"/></label></div></section>
-      <section className="intake-link-panel"><div className="link-panel-copy"><span className="eyebrow">YOUR PUBLIC INTAKE LINK</span><h2>Ready when you are.</h2><p>Share this private link with the next business you’d like to help.</p></div><div className="copy-url"><Link2 size={16}/><span>{publicUrl}</span><Button variant="outline" onClick={copyLink}><Copy size={15}/>{copied?'Copied':'Copy link'}</Button></div>{copyError && <small className="copy-error">Could not copy automatically. Select the link to copy it manually.</small>}</section>
+      <section className="intake-link-panel"><div className="link-panel-copy"><span className="eyebrow">PUBLIC INTAKE LINK</span><h2>Ready for your website.</h2><p>Anyone with this link can submit—no invitation or account is needed. Add it to your website, email, or social profile.</p></div><label className="publish-toggle"><input type="checkbox" checked={value.publishOnWebsite} onChange={e=>patch({publishOnWebsite:e.target.checked})}/><span><b>Show assessment on this website</b><small>Add a public intake button to the Boss Mom Consulting home page.</small></span></label><div className="copy-url"><Link2 size={16}/><span>{publicUrl}</span><Button variant="outline" onClick={copyLink}><Copy size={15}/>{copied?'Copied':'Copy public link'}</Button></div>{copyError && <small className="copy-error">Could not copy automatically. Select the link to copy it manually.</small>}</section>
       {saveSettings.isError && <div className="inline-error">Your practice settings could not be saved. Please try again.</div>}
       <div className="settings-submit"><span>Changes take effect on your next shared intake link view.</span><Button type="submit" disabled={saveSettings.isPending || value.enabledServices.length===0}>{saveSettings.isPending?'Saving changes…':'Save practice details'} <ArrowRight size={15}/></Button></div>
     </form>
@@ -292,7 +300,11 @@ const questionThemes: Record<ServiceType, { title: string; topics: string[]; goa
 
 export function IntakePage() {
   const params = new URLSearchParams(window.location.search);
-  const ownerId = params.get('owner') || '';
+  const directOwnerId = params.get('owner') || '';
+  const websiteProfileQuery = useGetPublicWebsiteProfile({
+    query: { enabled: !directOwnerId, retry: false },
+  });
+  const ownerId = directOwnerId || websiteProfileQuery.data?.ownerId || '';
   const profileQuery = useGetPublicLeadSettings(ownerId, { query: { enabled: !!ownerId, queryKey: getGetPublicLeadSettingsQueryKey(ownerId) } });
   const submit = useSubmitPublicLead();
   const [service, setService] = useState<ServiceType | ''>('');
@@ -313,9 +325,12 @@ export function IntakePage() {
     if (!ownerId || !service) return;
     submit.mutate({ data: { ownerId, name:form.name, email:form.email, company:form.company || null, website:form.website || null, serviceType:service, industry:form.industry || null, goals:form.goals, challenge:form.challenge, timeline:form.timeline } }, { onSuccess: data=>setResult(data) });
   }
+  const lookupLoading = directOwnerId
+    ? profileQuery.isLoading
+    : websiteProfileQuery.isLoading || (!!ownerId && profileQuery.isLoading);
   return <div className="intake-page field-grain">
     <header className="intake-top"><Link href="/" className="logo-link"><Wordmark/></Link><span className="intake-kicker">A THOUGHTFUL FIRST STEP</span></header>
-    {profileQuery.isLoading ? <div className="intake-centered"><LoadingPanel label="Opening your assessment"/></div> :
+    {lookupLoading ? <div className="intake-centered"><LoadingPanel label="Opening your assessment"/></div> :
        profileQuery.isError || !ownerId || !profile ? <div className="intake-centered"><div className="intake-error"><span className="empty-icon"><FileText/></span><span className="eyebrow">ASSESSMENT NOT FOUND</span><h1>We couldn’t find this assessment link.</h1><p>Check the link you received, or ask Boss Mom Consulting to share a fresh one.</p><Link href="/" className="btn btn-outline"><ArrowLeft size={15}/> Return to Boss Mom Consulting</Link></div></div> :
       result ? <AssessmentResult result={result} profile={profile}/> :
       <main className="intake-content rise-in"><div className="intake-intro"><span className="eyebrow"><span className="eyebrow-line"/>A client assessment by {profile.businessName}</span><h1>Good work starts<br/>with <em>good questions.</em></h1><p>{profile.tagline || 'A few details help us understand your business and make our first conversation useful.'}</p><div className="intake-links">{profile.websiteUrl && <a href={profile.websiteUrl} target="_blank" rel="noreferrer"><Globe2 size={14}/>Website</a>}{profile.fiverrUrl && <a href={profile.fiverrUrl} target="_blank" rel="noreferrer"><ExternalLink size={14}/>Fiverr</a>}</div></div>
@@ -343,12 +358,13 @@ function AssessmentResult({ result, profile }: { result: PublicLeadResult; profi
     <div className="result-summary"><span className="eyebrow">YOUR CONSULTING BRIEF</span><p>{result.reportSummary}</p></div>
     <div className="readiness-row"><span>BRIEF READINESS</span><div className="readiness-meter"><i style={{width:`${result.readinessScore}%`}}/></div><b>{result.readinessScore}<small>/100</small></b></div>
     <p className="score-caption">Based on the detail in your answers—not a technical audit score.</p>
-    <div className="result-next"><Sprout size={19}/><span>Your assessment has been saved for {result.businessName} to review.</span></div>
+    <div className="result-next"><Sprout size={19}/><span>Your assessment has been saved for {result.businessName} to review. For service options, continue to Fiverr.</span></div>
     <div className="result-links">
       {profile.websiteUrl && <a className="btn btn-outline" href={profile.websiteUrl} target="_blank" rel="noreferrer">Visit website <ExternalLink size={14}/></a>}
-      {profile.fiverrUrl && <a className="btn btn-outline" href={profile.fiverrUrl} target="_blank" rel="noreferrer">Explore Fiverr services <ExternalLink size={14}/></a>}
+      {profile.fiverrUrl && <a className="btn btn-solid" href={profile.fiverrUrl} target="_blank" rel="noopener noreferrer">Choose a service on Fiverr <ExternalLink size={14}/></a>}
       <Button className="result-print" variant="outline" onClick={() => window.print()}>Print / save as PDF</Button>
     </div>
+    {!profile.fiverrUrl && <p className="fiverr-followup">Boss Mom Consulting will follow up with you about service options.</p>}
     <Link href="/" className="result-back">More about Boss Mom Consulting <ArrowRight size={14}/></Link>
   </main>;
 }

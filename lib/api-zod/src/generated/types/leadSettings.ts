@@ -12,6 +12,7 @@ export interface LeadSettings {
   businessName: string;
   tagline: string;
   enabledServices: ServiceType[];
+  publishOnWebsite: boolean;
   /** @nullable */
   websiteUrl?: string | null;
   /** @nullable */

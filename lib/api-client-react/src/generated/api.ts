@@ -1011,6 +1011,107 @@ export function useGetPublicLeadSettings<TData = Awaited<ReturnType<typeof getPu
 
 
 
+export const getGetPublicWebsiteProfileUrl = () => {
+
+
+
+
+  return `/api/public/website-profile`
+}
+
+/**
+ * @summary Get the business profile published on the public website
+ */
+export const getPublicWebsiteProfile = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicLeadSettings> => {
+
+  return customFetch<PublicLeadSettings>(getGetPublicWebsiteProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicWebsiteProfileQueryKey = () => {
+    return [
+    `/api/public/website-profile`
+    ] as const;
+    }
+
+
+export const getGetPublicWebsiteProfileQueryOptions = <TData = Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicWebsiteProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicWebsiteProfile>>> = ({ signal }) => getPublicWebsiteProfile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicWebsiteProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicWebsiteProfile>>>
+export type GetPublicWebsiteProfileQueryError = ErrorType<ErrorEnvelope>
+
+
+export function useGetPublicWebsiteProfile<TData = Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError = ErrorType<ErrorEnvelope>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicWebsiteProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicWebsiteProfile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicWebsiteProfile<TData = Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicWebsiteProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicWebsiteProfile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicWebsiteProfile<TData = Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get the business profile published on the public website
+ */
+
+export function useGetPublicWebsiteProfile<TData = Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicWebsiteProfile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicWebsiteProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getSubmitPublicLeadUrl = () => {
 
 

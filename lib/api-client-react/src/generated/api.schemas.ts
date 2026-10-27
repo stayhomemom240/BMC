@@ -120,6 +120,7 @@ export interface LeadSettings {
   businessName: string;
   tagline: string;
   enabledServices: ServiceType[];
+  publishOnWebsite: boolean;
   /** @nullable */
   websiteUrl?: string | null;
   /** @nullable */
@@ -136,6 +137,7 @@ export interface LeadSettingsInput {
   tagline: string;
   /** @minItems 1 */
   enabledServices: ServiceType[];
+  publishOnWebsite: boolean;
   /** @nullable */
   websiteUrl?: string | null;
   /** @nullable */
@@ -143,6 +145,7 @@ export interface LeadSettingsInput {
 }
 
 export interface PublicLeadSettings {
+  ownerId: string;
   businessName: string;
   tagline: string;
   enabledServices: ServiceType[];

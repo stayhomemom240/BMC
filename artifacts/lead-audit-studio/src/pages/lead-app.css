@@ -641,3 +641,27 @@ button { color: inherit; cursor: pointer; }
   .wordmark {font-size:14px;gap:6px;}
   .mobile-top .wordmark {font-size:13px;}
 }
+
+/* Public website and intake publishing */
+.public-nav {border-color:#ead8d8;}
+.public-nav-links {display:flex;align-items:center;gap:22px;font-size:12px;font-weight:600;color:var(--muted-ink);}
+.public-nav-links>a:hover {color:var(--rose);}
+.public-nav-links .public-nav-cta {padding:10px 13px;border-radius:5px;background:var(--deep);color:#fffdf9;}
+.public-nav-links .public-nav-cta:hover {background:var(--deep-2);color:#fffdf9;}
+.offer-strip {scroll-margin-top:24px;}
+.offer-catalog>div {min-height:105px;align-content:center;}
+.offer-catalog small {line-height:1.55;}
+.website-intake-note {max-width:300px;margin:0;color:#f3dbe0;font-size:12px;line-height:1.6;}
+.publish-toggle {display:flex;align-items:flex-start;gap:12px;padding:15px 17px;margin:16px 0 12px;border:1px solid #ead6d2;background:#fffaf6;cursor:pointer;}
+.publish-toggle input {width:17px;height:17px;margin:2px 0 0;accent-color:var(--deep);flex:0 0 auto;}
+.publish-toggle span {display:flex;flex-direction:column;gap:4px;}
+.publish-toggle b {font-size:11px;color:var(--ink);}
+.publish-toggle small {font-size:10px;line-height:1.45;color:var(--muted-ink);}
+.fiverr-followup {font-size:11px;line-height:1.6;color:var(--muted-ink);}
+@media (max-width:760px) {
+  .public-nav-links {gap:10px;}
+  .public-nav-links>a:not(.public-nav-cta):not(.text-link) {display:none;}
+  .public-nav-links .public-nav-cta {padding:9px 10px;font-size:10px;}
+  .public-nav-links .text-link {font-size:10px;gap:4px;}
+  .offer-catalog>div {min-height:86px;}
+}
