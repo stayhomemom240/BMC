@@ -22,6 +22,7 @@ import {
   UpdateLeadSettingsResponse,
 } from "@workspace/api-zod";
 import { db, leadSettingsTable, leadsTable } from "@workspace/db";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -30,6 +31,10 @@ const serviceTypes = ["local-seo", "zero-waste", "general"] as const;
 const requireAuth: RequestHandler = (req, res, next) => {
   const ownerId = getAuth(req).userId;
   if (!ownerId) {
+    logger.warn(
+      { event: "unauthorized_api_access", method: req.method, path: req.path },
+      "Rejected an unauthenticated request for private lead data",
+    );
     res.status(401).json({ error: "Sign in to access lead records." });
     return;
   }

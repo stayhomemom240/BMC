@@ -24,6 +24,7 @@ import type {
 import { useQueryClient } from '@tanstack/react-query';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const signInHref = `${basePath}/sign-in`;
 const offerLabels: Record<ServiceType, string> = {
   'local-seo': 'Local visibility audit',
   'zero-waste': 'Zero-waste audit',
@@ -51,7 +52,7 @@ function Wordmark({ inverse = false }: { inverse?: boolean }) {
 }
 
 function PublicNav({ showIntake = false }: { showIntake?: boolean }) {
-  return <header className="public-nav"><a href="#home" className="logo-link" aria-label="Boss Mom Consulting home"><Wordmark/></a><nav className="public-nav-links" aria-label="Main navigation"><a href="#home">Home</a><a href="#about">About</a><a href="#services">Services</a>{showIntake && <Link href="/intake" className="public-nav-cta">Start an assessment</Link>}<Link href="/sign-in" className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></Link></nav></header>;
+  return <header className="public-nav"><a href="#home" className="logo-link" aria-label="Boss Mom Consulting home"><Wordmark/></a><nav className="public-nav-links" aria-label="Main navigation"><a href="#home">Home</a><a href="#about">About</a><a href="#services">Services</a>{showIntake && <Link href="/intake" className="public-nav-cta">Start an assessment</Link>}<a href={signInHref} className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></a></nav></header>;
 }
 
 function AppShell({ children, active }: { children: React.ReactNode; active: string }) {
@@ -146,7 +147,7 @@ export function HomePage() {
     <section className="offer-strip" id="services"><div className="public-container offer-strip-inner"><span className="eyebrow">Products &amp; services</span><div className="offer-catalog"><div><MapPin/><b>Local SEO / GEO</b><small>Improve local search visibility, business listings, and your presence in AI-powered search.</small></div><div><Leaf/><b>Zero-waste consulting</b><small>Review waste streams and find realistic opportunities to reduce, reuse, and divert.</small></div><div><Target/><b>Business needs assessment</b><small>Clarify priorities, goals, and the right scope for your next project.</small></div></div></div></section>
     <section className="public-how public-container"><div><span className="eyebrow">A practical approach</span><h2>Clear priorities.<br/><em>Useful next steps.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Start with your goals</h3><p>Share what your business is working toward and what is getting in the way.</p></article><article><span>02</span><h3>Focus on your needs</h3><p>Choose local visibility, zero-waste support, or a broader business assessment.</p></article><article><span>03</span><h3>Choose how to work together</h3><p>Review the suggested next step, then continue through the website or Fiverr.</p></article></div></section>
     <section className="closing-band"><div className="public-container closing-inner"><div><span className="eyebrow">Ready to talk about your business?</span><h2>Start with a clear<br/>first conversation.</h2></div>{profile ? <Link href="/intake" className="btn btn-brass">Start your assessment <ArrowRight size={16}/></Link> : <p className="website-intake-note">The online assessment is being prepared. Please check back soon.</p>}</div></section>
-    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · practical support for your next step.</span><Link href="/sign-in">Owner sign in <ArrowRight size={14}/></Link></footer>
+    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · practical support for your next step.</span><a href={signInHref}>Owner sign in <ArrowRight size={14}/></a></footer>
   </div>;
 }
 
