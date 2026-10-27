@@ -51,7 +51,7 @@ function Wordmark({ inverse = false }: { inverse?: boolean }) {
 }
 
 function PublicNav({ showIntake = false }: { showIntake?: boolean }) {
-  return <header className="public-nav"><Link href="/" className="logo-link"><Wordmark/></Link><nav className="public-nav-links" aria-label="Main navigation"><Link href="/about">About</Link><a href="/#services">Services</a>{showIntake && <Link href="/intake" className="public-nav-cta">Start an assessment</Link>}<Link href="/sign-in" className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></Link></nav></header>;
+  return <header className="public-nav"><a href="#home" className="logo-link" aria-label="Boss Mom Consulting home"><Wordmark/></a><nav className="public-nav-links" aria-label="Main navigation"><a href="#home">Home</a><a href="#about">About</a><a href="#services">Services</a>{showIntake && <Link href="/intake" className="public-nav-cta">Start an assessment</Link>}<Link href="/sign-in" className="text-link" data-testid="link-sign-in">Owner sign in <ArrowRight size={15}/></Link></nav></header>;
 }
 
 function AppShell({ children, active }: { children: React.ReactNode; active: string }) {
@@ -116,7 +116,7 @@ export function HomePage() {
   const profile = publicProfileQuery.data;
   return <div className="public-page field-grain">
     <PublicNav showIntake={!!profile}/>
-    <section className="hero public-container" id="about">
+    <section className="hero public-container" id="home">
       <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>Boss Mom Consulting</span><h1>Practical support<br/><em>for your business.</em></h1><p className="hero-intro">Thoughtful consulting for local visibility, sustainability, and the next business decision in front of you. Start with what matters most and leave with a clearer next step.</p>
         <div className="hero-actions">{profile && <Link href="/intake" className="btn btn-solid" data-testid="link-public-intake">Tell me about your business <ArrowRight size={16}/></Link>}{profile?.fiverrUrl && <a href={profile.fiverrUrl} className="btn btn-outline" target="_blank" rel="noopener noreferrer">Explore services on Fiverr <ExternalLink size={15}/></a>}</div>
         <div className="trust-note"><span className="trust-rule"/>Flexible support for small businesses</div>
@@ -128,6 +128,20 @@ export function HomePage() {
         </div>
         <div className="photo-seal" aria-hidden="true"><b>BM</b><span>CONSULTING</span></div>
       </div>
+    </section>
+    <section className="public-about public-container" id="about">
+      <div className="public-about-copy">
+        <span className="eyebrow">About Boss Mom Consulting</span>
+        <h2>Practical guidance, shaped around <em>your business.</em></h2>
+        <p>Boss Mom Consulting works with small businesses to make complex priorities easier to act on—from getting found locally to reducing waste and planning the next step.</p>
+        <p>Every engagement starts by understanding your goals, constraints, and current challenges. The aim is a clear, realistic path forward—not a one-size-fits-all checklist.</p>
+      </div>
+      <aside className="about-promise">
+        <span className="eyebrow">What to expect</span>
+        <b>Listen first.<br/>Focus on what matters.<br/>Leave with next steps.</b>
+        <span>Choose the service that fits, or begin with a short assessment if you’re not sure yet.</span>
+        {profile && <Link href="/intake" className="text-link">Start with the assessment <ArrowRight size={15}/></Link>}
+      </aside>
     </section>
     <section className="offer-strip" id="services"><div className="public-container offer-strip-inner"><span className="eyebrow">Products &amp; services</span><div className="offer-catalog"><div><MapPin/><b>Local SEO / GEO</b><small>Improve local search visibility, business listings, and your presence in AI-powered search.</small></div><div><Leaf/><b>Zero-waste consulting</b><small>Review waste streams and find realistic opportunities to reduce, reuse, and divert.</small></div><div><Target/><b>Business needs assessment</b><small>Clarify priorities, goals, and the right scope for your next project.</small></div></div></div></section>
     <section className="public-how public-container"><div><span className="eyebrow">A practical approach</span><h2>Clear priorities.<br/><em>Useful next steps.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Start with your goals</h3><p>Share what your business is working toward and what is getting in the way.</p></article><article><span>02</span><h3>Focus on your needs</h3><p>Choose local visibility, zero-waste support, or a broader business assessment.</p></article><article><span>03</span><h3>Choose how to work together</h3><p>Review the suggested next step, then continue through the website or Fiverr.</p></article></div></section>

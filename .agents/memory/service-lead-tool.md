@@ -11,6 +11,8 @@ Assessment summaries and readiness scores should be presented as questionnaire-d
 
 The public About page should describe services only, never expose CRM leads or performance data. The homepage assessment CTA is opt-in from owner settings; generated intake links remain public, and completed assessments should direct prospects to the configured Fiverr page.
 
+The public site should be a single-page experience with separate Home, About, and Services sections reached by in-page navigation.
+
 **Why:** the owner asked for a trusted way to capture, track, analyze, and report on service prospects, selected a flexible multi-service setup, supplied the brand identity, and clarified that the website is for prospects while the CRM stays private.
 
 **How to apply:** keep the assessment open to prospects, scope each lead to its owning account, and distinguish answers-based summaries from evidence-backed audit results.
