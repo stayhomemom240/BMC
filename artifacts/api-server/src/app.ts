@@ -19,6 +19,9 @@ import {
 const app: Express = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+const configuredAppOrigin = process.env.APP_ORIGIN
+  ? new URL(process.env.APP_ORIGIN).origin
+  : null;
 
 app.use(
   pinoHttp({
@@ -80,7 +83,9 @@ const requireSameOriginWrites: RequestHandler = (req, res, next) => {
     return;
   }
 
-  if (parsedOrigin !== `${req.protocol}://${host}`) {
+  const expectedOrigin =
+    configuredAppOrigin ?? `${req.protocol}://${host}`;
+  if (parsedOrigin !== expectedOrigin) {
     logger.warn(
       { event: "cross_origin_write_rejected", method: req.method, path: req.path },
       "Rejected a cross-origin API write",

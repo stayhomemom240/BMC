@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-zod";
 import { db, leadSettingsTable, leadsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
+import { sendLeadNotification } from "../services/leadNotifications";
 
 const router: IRouter = Router();
 
@@ -168,6 +169,7 @@ router.post("/leads", requireAuth, async (req, res): Promise<void> => {
   }
 
   const lead = await insertLead(res.locals.ownerId as string, parsed.data);
+  await sendLeadNotification(lead);
   res.status(201).json(CreateLeadResponse.parse(serializeLead(lead)));
 });
 
@@ -411,6 +413,7 @@ router.post("/public/leads", async (req, res): Promise<void> => {
   }
 
   const lead = await insertLead(input.ownerId, input);
+  await sendLeadNotification(lead);
   const result = {
     id: lead.id,
     businessName: settings.businessName,

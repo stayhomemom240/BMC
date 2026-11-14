@@ -1,0 +1,5 @@
+{
+  "name": "lead-insight-hub",
+  "compatibility_date": "2026-11-14",
+  "pages_build_output_dir": "./artifacts/lead-audit-studio/dist/public"
+}
