@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
-@layer theme, base, clerk, components, utilities;
+@layer theme, base, components, utilities;
 @import 'tailwindcss';
-@import '@clerk/themes/shadcn.css';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
 
@@ -474,32 +473,32 @@
 
 /* Final semantic token values override the scaffold placeholders above. */
 :root {
-  --background: 42 39% 95%; --foreground: 161 24% 17%; --border: 38 22% 84%;
-  --card: 44 40% 98%; --card-foreground: 161 24% 17%; --card-border: 38 22% 84%;
-  --sidebar: 160 24% 20%; --sidebar-foreground: 45 37% 92%; --sidebar-border: 160 19% 29%;
-  --sidebar-primary: 37 74% 63%; --sidebar-primary-foreground: 161 24% 17%;
-  --sidebar-accent: 160 19% 29%; --sidebar-accent-foreground: 45 37% 92%; --sidebar-ring: 37 74% 63%;
-  --popover: 44 40% 98%; --popover-foreground: 161 24% 17%; --popover-border: 38 22% 84%;
-  --primary: 160 31% 27%; --primary-foreground: 42 39% 96%; --secondary: 38 29% 89%;
-  --secondary-foreground: 161 24% 20%; --muted: 39 24% 91%; --muted-foreground: 156 10% 43%;
-  --accent: 37 74% 63%; --accent-foreground: 161 24% 17%; --destructive: 5 58% 49%;
-  --destructive-foreground: 0 0% 98%; --input: 38 22% 84%; --ring: 160 31% 35%;
-  --chart-1: 160 31% 27%; --chart-2: 37 74% 57%; --chart-3: 199 29% 52%;
-  --chart-4: 12 47% 61%; --chart-5: 92 23% 57%;
+  --background: 40 45% 94%; --foreground: 10 25% 16%; --border: 39 35% 81%;
+  --card: 39 100% 97%; --card-foreground: 10 25% 16%; --card-border: 39 35% 81%;
+  --sidebar: 338 61% 20%; --sidebar-foreground: 43 50% 93%; --sidebar-border: 338 34% 30%;
+  --sidebar-primary: 42 53% 60%; --sidebar-primary-foreground: 10 25% 16%;
+  --sidebar-accent: 338 34% 30%; --sidebar-accent-foreground: 43 50% 93%; --sidebar-ring: 42 53% 60%;
+  --popover: 39 100% 97%; --popover-foreground: 10 25% 16%; --popover-border: 39 35% 81%;
+  --primary: 338 61% 25%; --primary-foreground: 40 45% 94%; --secondary: 39 48% 89%;
+  --secondary-foreground: 10 25% 19%; --muted: 38 38% 90%; --muted-foreground: 23 10% 43%;
+  --accent: 41 55% 58%; --accent-foreground: 10 25% 16%; --destructive: 5 58% 49%;
+  --destructive-foreground: 0 0% 98%; --input: 39 35% 81%; --ring: 338 61% 34%;
+  --chart-1: 338 61% 25%; --chart-2: 41 55% 58%; --chart-3: 347 37% 49%;
+  --chart-4: 31 44% 43%; --chart-5: 37 24% 75%;
   --app-font-sans: 'DM Sans', sans-serif; --app-font-serif: 'Fraunces', serif; --app-font-mono: 'DM Mono', monospace;
   --radius: .8rem;
 }
 .dark {
-  --background: 161 23% 12%; --foreground: 42 30% 91%; --border: 160 12% 29%;
-  --card: 160 19% 17%; --card-foreground: 42 30% 91%; --card-border: 160 12% 29%;
-  --sidebar: 161 25% 10%; --sidebar-foreground: 42 30% 91%; --sidebar-border: 160 12% 25%;
-  --sidebar-primary: 37 74% 63%; --sidebar-primary-foreground: 161 24% 17%;
-  --sidebar-accent: 160 17% 22%; --sidebar-accent-foreground: 42 30% 91%; --sidebar-ring: 37 74% 63%;
-  --popover: 160 19% 17%; --popover-foreground: 42 30% 91%; --popover-border: 160 12% 29%;
-  --primary: 160 30% 54%; --primary-foreground: 161 26% 10%; --secondary: 160 14% 24%;
-  --secondary-foreground: 42 30% 91%; --muted: 160 14% 24%; --muted-foreground: 38 12% 65%;
-  --accent: 37 74% 63%; --accent-foreground: 161 24% 17%; --destructive: 5 58% 58%;
-  --destructive-foreground: 0 0% 98%; --input: 160 12% 29%; --ring: 160 30% 54%;
-  --chart-1: 160 30% 54%; --chart-2: 37 74% 63%; --chart-3: 199 29% 62%;
-  --chart-4: 12 47% 65%; --chart-5: 92 23% 62%;
+  --background: 338 19% 11%; --foreground: 38 36% 92%; --border: 338 18% 28%;
+  --card: 338 21% 16%; --card-foreground: 38 36% 92%; --card-border: 338 18% 28%;
+  --sidebar: 338 22% 9%; --sidebar-foreground: 38 36% 92%; --sidebar-border: 338 18% 24%;
+  --sidebar-primary: 43 54% 64%; --sidebar-primary-foreground: 338 37% 16%;
+  --sidebar-accent: 338 20% 20%; --sidebar-accent-foreground: 38 36% 92%; --sidebar-ring: 43 54% 64%;
+  --popover: 338 21% 16%; --popover-foreground: 38 36% 92%; --popover-border: 338 18% 28%;
+  --primary: 43 54% 64%; --primary-foreground: 338 37% 16%; --secondary: 21 13% 22%;
+  --secondary-foreground: 38 36% 92%; --muted: 21 13% 22%; --muted-foreground: 36 18% 68%;
+  --accent: 43 54% 64%; --accent-foreground: 338 37% 16%; --destructive: 5 58% 58%;
+  --destructive-foreground: 0 0% 98%; --input: 338 18% 28%; --ring: 43 54% 64%;
+  --chart-1: 43 54% 64%; --chart-2: 347 37% 60%; --chart-3: 31 44% 59%;
+  --chart-4: 37 24% 75%; --chart-5: 338 42% 48%;
 }

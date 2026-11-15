@@ -5,16 +5,9 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
 app.disable("x-powered-by");
@@ -43,8 +36,7 @@ app.use(
   }),
 );
 
-// Keep response security headers while leaving CSP to the web host so Clerk's
-// sign-in and Turnstile can load without a broken policy.
+// Keep response security headers while leaving CSP to the web host.
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -58,6 +50,18 @@ const publicLeadRateLimit = rateLimit({
   handler: (_req, res) => {
     res.status(429).json({
       error: "Too many assessment submissions. Please try again shortly.",
+    });
+  },
+});
+
+const publicConsultationRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many consultation requests. Please try again shortly.",
     });
   },
 });
@@ -97,20 +101,12 @@ const requireSameOriginWrites: RequestHandler = (req, res, next) => {
   next();
 };
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: false, limit: "16kb" }));
-app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
-);
 
 app.use("/api", requireSameOriginWrites);
 app.use("/api/public/leads", publicLeadRateLimit);
+app.use("/api/public/consultation-requests", publicConsultationRateLimit);
 app.use("/api", router);
 
 const apiErrorHandler: ErrorRequestHandler = (error, req, res, next) => {

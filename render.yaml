@@ -12,9 +12,9 @@ services:
         sync: false
       - key: APP_ORIGIN
         sync: false
-      - key: CLERK_SECRET_KEY
+      - key: NEON_AUTH_BASE_URL
         sync: false
-      - key: CLERK_PUBLISHABLE_KEY
+      - key: NEON_AUTH_JWKS_URL
         sync: false
       - key: RESEND_API_KEY
         sync: false

@@ -9,6 +9,7 @@ import type { ServiceType } from './serviceType';
 
 export interface PublicLeadResult {
   id: number;
+  bookingToken: string;
   businessName: string;
   serviceType: ServiceType;
   /**

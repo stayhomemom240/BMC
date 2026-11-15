@@ -203,6 +203,7 @@ export interface PublicLeadInput {
 
 export interface PublicLeadResult {
   id: number;
+  bookingToken: string;
   businessName: string;
   serviceType: ServiceType;
   /**
@@ -212,6 +213,31 @@ export interface PublicLeadResult {
   readinessScore: number;
   reportTitle: string;
   reportSummary: string;
+}
+
+export type ConsultationRequestInputMeetingType = typeof ConsultationRequestInputMeetingType[keyof typeof ConsultationRequestInputMeetingType];
+
+
+export const ConsultationRequestInputMeetingType = {
+  zoom: 'zoom',
+  phone: 'phone',
+} as const;
+
+export interface ConsultationRequestInput {
+  bookingToken: string;
+  startsAt: string;
+  meetingType: ConsultationRequestInputMeetingType;
+  /**
+     * @minLength 7
+     * @maxLength 40
+     * @nullable
+     */
+  phone?: string | null;
+}
+
+export interface ConsultationRequestResult {
+  id: number;
+  notificationSent: boolean;
 }
 
 export interface ServiceBreakdown {

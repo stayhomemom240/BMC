@@ -25,6 +25,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ConsultationRequestInput,
+  ConsultationRequestResult,
   ErrorEnvelope,
   HealthStatus,
   Lead,
@@ -1198,5 +1200,93 @@ export const useSubmitPublicLead = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getSubmitPublicLeadMutationOptions(options), queryClient);
+    }
+
+export const getRequestConsultationUrl = () => {
+
+
+
+
+  return `/api/public/consultation-requests`
+}
+
+/**
+ * @summary Request a consultation time for a submitted assessment
+ */
+export const requestConsultation = async (consultationRequestInput: ConsultationRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<ConsultationRequestResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsultationRequestResult>(getRequestConsultationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(consultationRequestInput)
+  }
+);}
+
+
+
+
+
+export const getRequestConsultationMutationKey = () => ['requestConsultation'] as const;
+
+export const getRequestConsultationMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestConsultation>>, TError,RequestConsultationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestConsultation>>, TError,RequestConsultationMutationVariables, TContext> => {
+
+const mutationKey = getRequestConsultationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestConsultation>>, RequestConsultationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestConsultation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestConsultationMutationResult = NonNullable<Awaited<ReturnType<typeof requestConsultation>>>
+    export type RequestConsultationMutationBody = BodyType<ConsultationRequestInput>
+    export type RequestConsultationMutationError = ErrorType<ErrorEnvelope>
+    export type RequestConsultationMutationVariables = {data: BodyType<ConsultationRequestInput>}
+
+    /**
+ * @summary Request a consultation time for a submitted assessment
+ */
+export const useRequestConsultation = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestConsultation>>, TError,RequestConsultationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestConsultation>>,
+        TError,
+        RequestConsultationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestConsultationMutationOptions(options), queryClient);
     }
 

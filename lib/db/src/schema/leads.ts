@@ -1,11 +1,21 @@
 import { createInsertSchema } from "drizzle-zod";
-import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const leadsTable = pgTable(
   "lead_audit_leads",
   {
     id: serial("id").primaryKey(),
+    publicBookingToken: uuid("public_booking_token").notNull().defaultRandom(),
     ownerId: text("owner_id").notNull(),
     name: text("name").notNull(),
     email: text("email").notNull(),
@@ -28,6 +38,9 @@ export const leadsTable = pgTable(
     index("lead_audit_leads_owner_created_idx").on(
       table.ownerId,
       table.createdAt,
+    ),
+    uniqueIndex("lead_audit_leads_public_booking_token_uidx").on(
+      table.publicBookingToken,
     ),
   ],
 );

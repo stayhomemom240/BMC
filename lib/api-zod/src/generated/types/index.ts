@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './consultationRequestInput';
+export * from './consultationRequestInputMeetingType';
+export * from './consultationRequestResult';
 export * from './errorEnvelope';
 export * from './healthStatus';
 export * from './lead';

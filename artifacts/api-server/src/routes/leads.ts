@@ -1,6 +1,5 @@
 import { and, desc, eq, ne } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
-import { Router, type IRouter, type RequestHandler } from "express";
+import { Router, type IRouter } from "express";
 import {
   CreateLeadBody,
   CreateLeadResponse,
@@ -13,6 +12,8 @@ import {
   GetPublicLeadSettingsResponse,
   GetPublicWebsiteProfileResponse,
   ListLeadsResponse,
+  RequestConsultationBody,
+  RequestConsultationResponse,
   SubmitPublicLeadBody,
   SubmitPublicLeadResponse,
   UpdateLeadBody,
@@ -21,27 +22,25 @@ import {
   UpdateLeadSettingsBody,
   UpdateLeadSettingsResponse,
 } from "@workspace/api-zod";
-import { db, leadSettingsTable, leadsTable } from "@workspace/db";
+import { isAvailableConsultationSlot } from "@workspace/api-zod/consultationAvailability";
+import {
+  consultationRequestsTable,
+  db,
+  leadSettingsTable,
+  leadsTable,
+} from "@workspace/db";
 import { logger } from "../lib/logger";
-import { sendLeadNotification } from "../services/leadNotifications";
+import { requireNeonAuth } from "../middlewares/neonAuthMiddleware";
+import {
+  sendConsultationNotification,
+  sendLeadNotification,
+} from "../services/leadNotifications";
 
 const router: IRouter = Router();
 
 const serviceTypes = ["local-seo", "zero-waste", "general"] as const;
 
-const requireAuth: RequestHandler = (req, res, next) => {
-  const ownerId = getAuth(req).userId;
-  if (!ownerId) {
-    logger.warn(
-      { event: "unauthorized_api_access", method: req.method, path: req.path },
-      "Rejected an unauthenticated request for private lead data",
-    );
-    res.status(401).json({ error: "Sign in to access lead records." });
-    return;
-  }
-  res.locals.ownerId = ownerId;
-  next();
-};
+const requireAuth = requireNeonAuth;
 
 function serviceLabel(serviceType: string): string {
   switch (serviceType) {
@@ -416,6 +415,7 @@ router.post("/public/leads", async (req, res): Promise<void> => {
   await sendLeadNotification(lead);
   const result = {
     id: lead.id,
+    bookingToken: lead.publicBookingToken,
     businessName: settings.businessName,
     serviceType: lead.serviceType,
     readinessScore: lead.readinessScore,
@@ -423,6 +423,82 @@ router.post("/public/leads", async (req, res): Promise<void> => {
     reportSummary: lead.reportSummary,
   };
   res.status(201).json(SubmitPublicLeadResponse.parse(result));
+});
+
+router.post("/public/consultation-requests", async (req, res): Promise<void> => {
+  const parsed = RequestConsultationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const input = parsed.data;
+  const [lead] = await db
+    .select({
+      id: leadsTable.id,
+      name: leadsTable.name,
+      email: leadsTable.email,
+      company: leadsTable.company,
+      serviceType: leadsTable.serviceType,
+    })
+    .from(leadsTable)
+    .where(eq(leadsTable.publicBookingToken, input.bookingToken));
+  if (!lead) {
+    res.status(404).json({ error: "This assessment link is not available." });
+    return;
+  }
+
+  const slotStartValue: unknown = input.startsAt;
+  const slotStart =
+    slotStartValue instanceof Date
+      ? slotStartValue
+      : new Date(String(slotStartValue));
+  if (!isAvailableConsultationSlot(slotStart)) {
+    res.status(409).json({
+      error: "That time is no longer available. Please choose another slot.",
+    });
+    return;
+  }
+
+  const phone = input.phone?.trim() || null;
+  if (input.meetingType === "phone" && (!phone || phone.length < 7)) {
+    res.status(400).json({
+      error: "Enter a phone number with at least 7 characters for a phone consultation.",
+    });
+    return;
+  }
+
+  const [consultation] = await db
+    .insert(consultationRequestsTable)
+    .values({
+      leadId: lead.id,
+      slotStart,
+      meetingType: input.meetingType,
+      phone: input.meetingType === "phone" ? phone : null,
+    })
+    .onConflictDoUpdate({
+      target: consultationRequestsTable.leadId,
+      set: {
+        slotStart,
+        meetingType: input.meetingType,
+        phone: input.meetingType === "phone" ? phone : null,
+        createdAt: new Date(),
+      },
+    })
+    .returning({ id: consultationRequestsTable.id });
+
+  const notificationSent = await sendConsultationNotification({
+    leadName: lead.name,
+    leadEmail: lead.email,
+    company: lead.company,
+    serviceType: serviceLabel(lead.serviceType),
+    startsAt: slotStart,
+    meetingType: input.meetingType,
+    phone: input.meetingType === "phone" ? phone : null,
+  });
+
+  const result = { id: consultation.id, notificationSent };
+  res.status(201).json(RequestConsultationResponse.parse(result));
 });
 
 export default router;

@@ -228,6 +228,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /public/consultation-requests:
+    post:
+      operationId: requestConsultation
+      tags: [public]
+      summary: Request a consultation time for a submitted assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsultationRequestInput"
+      responses:
+        "201":
+          description: Consultation request saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationRequestResult"
+        "400":
+          description: Invalid consultation request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Assessment link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Requested time is no longer available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
 components:
   schemas:
     HealthStatus:
@@ -363,6 +399,7 @@ components:
       type: object
       properties:
         id: { type: integer }
+        bookingToken: { type: string, format: uuid }
         businessName: { type: string }
         serviceType: { $ref: "#/components/schemas/ServiceType" }
         readinessScore: { type: integer, minimum: 0, maximum: 100 }
@@ -370,11 +407,26 @@ components:
         reportSummary: { type: string }
       required:
         - id
+        - bookingToken
         - businessName
         - serviceType
         - readinessScore
         - reportTitle
         - reportSummary
+    ConsultationRequestInput:
+      type: object
+      properties:
+        bookingToken: { type: string, format: uuid }
+        startsAt: { type: string, format: date-time }
+        meetingType: { type: string, enum: [zoom, phone] }
+        phone: { type: ["string", "null"], minLength: 7, maxLength: 40 }
+      required: [bookingToken, startsAt, meetingType]
+    ConsultationRequestResult:
+      type: object
+      properties:
+        id: { type: integer }
+        notificationSent: { type: boolean }
+      required: [id, notificationSent]
     ServiceBreakdown:
       type: object
       properties:

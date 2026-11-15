@@ -2,24 +2,25 @@ import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import './lead-app.css';
 import { Link, useLocation } from 'wouter';
-import { useClerk, useUser, SignIn, SignUp } from '@clerk/react';
+import { authClient } from '@/lib/auth';
 import {
-  Activity, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BriefcaseBusiness,
-  Check, CheckCircle2, ChevronDown, ClipboardCheck, Copy, ExternalLink, FileText,
+  Activity, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BriefcaseBusiness, Crown,
+  CalendarDays, Check, CheckCircle2, ChevronDown, ClipboardCheck, Copy, ExternalLink, FileText,
   Filter, Globe2, Leaf, Link2, LoaderCircle, MapPin, Menu, MessageSquareText,
-  Plus, Search, Settings2, Sprout, Target, Trash2, TrendingUp,
+  Phone, Plus, Search, Settings2, Sprout, Target, Trash2, TrendingUp, Video,
   UserRound, X,
 } from 'lucide-react';
+import { getConsultationSlots } from '@workspace/api-zod/consultationAvailability';
 import {
   getGetLeadInsightsQueryKey, getGetLeadQueryKey, getGetLeadSettingsQueryKey, getGetPublicLeadSettingsQueryKey,
   getGetPublicWebsiteProfileQueryKey,
   getListLeadsQueryKey, useCreateLead, useDeleteLead, useGetLead,
   useGetLeadInsights, useGetLeadSettings, useGetPublicLeadSettings, useGetPublicWebsiteProfile,
-  useHealthCheck, useListLeads, useSubmitPublicLead, useUpdateLead,
+  useHealthCheck, useListLeads, useRequestConsultation, useSubmitPublicLead, useUpdateLead,
   useUpdateLeadSettings,
 } from '@workspace/api-client-react';
 import type {
-  Lead, LeadInsights, LeadSettingsInput, LeadStage, PublicLeadResult, PublicLeadSettings, ServiceType,
+  ConsultationRequestResult, Lead, LeadInsights, LeadSettingsInput, LeadStage, PublicLeadResult, PublicLeadSettings, ServiceType,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -48,7 +49,7 @@ function Button({ children, onClick, variant = 'solid', type = 'button', disable
 }
 
 function Wordmark({ inverse = false }: { inverse?: boolean }) {
-  return <div className={cx('wordmark', inverse && 'wordmark-inverse')} aria-label="Boss Mom Consulting"><span className="mark-icon">BM</span><span className="wordmark-name"><span>Boss Mom</span><i>Consulting</i></span></div>;
+  return <div className={cx('wordmark', inverse && 'wordmark-inverse')} aria-label="Boss Mom Consulting"><span className="mark-icon"><img src="/brand-monogram.webp" alt=""/></span><span className="wordmark-name"><span>Boss Mom</span><i>Consulting</i></span></div>;
 }
 
 function PublicNav({ showIntake = false }: { showIntake?: boolean }) {
@@ -56,9 +57,24 @@ function PublicNav({ showIntake = false }: { showIntake?: boolean }) {
 }
 
 function AppShell({ children, active }: { children: React.ReactNode; active: string }) {
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+  const [, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  async function handleSignOut() {
+    setSignOutError(null);
+    try {
+      const result = await authClient.signOut();
+      if (result.error) {
+        setSignOutError(result.error.message ?? 'Sign out failed.');
+        return;
+      }
+      setLocation('/');
+    } catch (error) {
+      setSignOutError(error instanceof Error ? error.message : 'Sign out failed.');
+    }
+  }
   const links = [
     { href: '/dashboard', label: 'Overview', icon: Activity },
     { href: '/leads', label: 'Lead book', icon: BriefcaseBusiness },
@@ -71,9 +87,10 @@ function AppShell({ children, active }: { children: React.ReactNode; active: str
       <nav className="side-nav">{links.map(item => <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={cx('side-link', active === item.href && 'side-link-active')} data-testid={`nav-${item.label.toLowerCase().replaceAll(' ', '-')}`}><item.icon size={17}/><span>{item.label}</span>{active === item.href && <span className="nav-indicator"/>}</Link>)}</nav>
       <div className="sidebar-bottom">
         <div className="sidebar-note"><span className="small-leaf"><Leaf size={15}/></span><p>Good work starts with good questions.</p></div>
-        <button className="profile-control" onClick={() => signOut({ redirectUrl: basePath || '/' })} data-testid="button-sign-out">
-          <span className="avatar-initial">{user?.firstName?.[0] ?? 'B'}</span><span className="profile-text"><b>{user?.firstName || 'Your account'}</b><small>Sign out</small></span><ArrowDownRight size={15}/>
+        <button className="profile-control" onClick={handleSignOut} data-testid="button-sign-out">
+          <span className="avatar-initial">{user?.name?.trim()?.[0] ?? 'B'}</span><span className="profile-text"><b>{user?.name?.trim() || 'Your account'}</b><small>Sign out</small></span><ArrowDownRight size={15}/>
         </button>
+        {signOutError && <p className="signout-error" role="alert">{signOutError}</p>}
       </div>
     </aside>
     {mobileOpen && <button aria-label="Close navigation" className="mobile-scrim" onClick={() => setMobileOpen(false)}/>}
@@ -118,24 +135,24 @@ export function HomePage() {
   return <div className="public-page field-grain">
     <PublicNav showIntake={!!profile}/>
     <section className="hero public-container" id="home">
-      <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>Boss Mom Consulting</span><h1>Practical support<br/><em>for your business.</em></h1><p className="hero-intro">Thoughtful consulting for local visibility, sustainability, and the next business decision in front of you. Start with what matters most and leave with a clearer next step.</p>
+      <div className="hero-copy rise-in"><span className="eyebrow"><span className="eyebrow-line"/>Strategize. Optimize. Grow.</span><h1>Your vision.<br/><em>Our strategy.</em></h1><p className="hero-intro">Digital marketing, SEO/GEO, practical web solutions, and brand alignment—built around your goals and focused on real growth.</p>
         <div className="hero-actions">{profile && <Link href="/intake" className="btn btn-solid" data-testid="link-public-intake">Tell me about your business <ArrowRight size={16}/></Link>}{profile?.fiverrUrl && <a href={profile.fiverrUrl} className="btn btn-outline" target="_blank" rel="noopener noreferrer">Explore services on Fiverr <ExternalLink size={15}/></a>}</div>
-        <div className="trust-note"><span className="trust-rule"/>Flexible support for small businesses</div>
+        <div className="trust-note"><span className="trust-rule"/>Be found. Be chosen. Be remembered.</div>
       </div>
       <div className="hero-visual rise-in delay-2" aria-label="Boss Mom Consulting office">
         <div className="hero-photo-frame">
           <img src="/boss-mom-office.jpeg" alt="Boss Mom Consulting office with an orchid, warm wood desk, and client seating"/>
-          <div className="hero-photo-caption"><span>Boss Mom Consulting</span><b>Good work starts with the right questions.</b></div>
+          <div className="hero-photo-caption"><span>Boss Mom Consulting</span><b>Be found. Be chosen. Be remembered.</b></div>
         </div>
-        <div className="photo-seal" aria-hidden="true"><b>BM</b><span>CONSULTING</span></div>
+        <img className="hero-brand-sticker" src="/brand-services-sticker.webp" alt="Boss Mom Consulting services: SEO and GEO, digital marketing, web development, and brand strategy"/>
       </div>
     </section>
     <section className="public-about public-container" id="about">
       <div className="public-about-copy">
         <span className="eyebrow">About Boss Mom Consulting</span>
-        <h2>Practical guidance, shaped around <em>your business.</em></h2>
-        <p>Boss Mom Consulting works with small businesses to make complex priorities easier to act on—from getting found locally to reducing waste and planning the next step.</p>
-        <p>Every engagement starts by understanding your goals, constraints, and current challenges. The aim is a clear, realistic path forward—not a one-size-fits-all checklist.</p>
+        <h2>Strategy that turns your vision into <em>momentum.</em></h2>
+        <p>Boss Mom Consulting helps small businesses sharpen their story, strengthen their visibility, and put the right digital tools to work—from SEO/GEO and brand alignment to web solutions and practical business planning.</p>
+        <p>Every engagement starts with your goals, budget, and current challenges. We also support local visibility and sustainability priorities, with a clear, realistic path forward—not a one-size-fits-all checklist.</p>
       </div>
       <aside className="about-promise">
         <span className="eyebrow">What to expect</span>
@@ -144,10 +161,10 @@ export function HomePage() {
         {profile && <Link href="/intake" className="text-link">Start with the assessment <ArrowRight size={15}/></Link>}
       </aside>
     </section>
-    <section className="offer-strip" id="services"><div className="public-container offer-strip-inner"><span className="eyebrow">Products &amp; services</span><div className="offer-catalog"><div><MapPin/><b>Local SEO / GEO</b><small>Improve local search visibility, business listings, and your presence in AI-powered search.</small></div><div><Leaf/><b>Zero-waste consulting</b><small>Review waste streams and find realistic opportunities to reduce, reuse, and divert.</small></div><div><Target/><b>Business needs assessment</b><small>Clarify priorities, goals, and the right scope for your next project.</small></div></div></div></section>
-    <section className="public-how public-container"><div><span className="eyebrow">A practical approach</span><h2>Clear priorities.<br/><em>Useful next steps.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Start with your goals</h3><p>Share what your business is working toward and what is getting in the way.</p></article><article><span>02</span><h3>Focus on your needs</h3><p>Choose local visibility, zero-waste support, or a broader business assessment.</p></article><article><span>03</span><h3>Choose how to work together</h3><p>Review the suggested next step, then continue through the website or Fiverr.</p></article></div></section>
-    <section className="closing-band"><div className="public-container closing-inner"><div><span className="eyebrow">Ready to talk about your business?</span><h2>Start with a clear<br/>first conversation.</h2></div>{profile ? <Link href="/intake" className="btn btn-brass">Start your assessment <ArrowRight size={16}/></Link> : <p className="website-intake-note">The online assessment is being prepared. Please check back soon.</p>}</div></section>
-    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · practical support for your next step.</span><a href={signInHref}>Owner sign in <ArrowRight size={14}/></a></footer>
+    <section className="offer-strip" id="services"><div className="public-container offer-strip-inner"><span className="eyebrow">Our services</span><div className="offer-catalog"><div><MapPin/><b>SEO &amp; GEO strategy</b><small>Strengthen local search, business listings, and visibility in AI-powered search.</small></div><div><Target/><b>Digital marketing</b><small>Reach the right audience with thoughtful, measurable campaigns.</small></div><div><Globe2/><b>Web app development</b><small>Build practical digital tools and experiences that support your growth.</small></div><div><Crown/><b>Brand strategy</b><small>Clarify your positioning, voice, and visual direction.</small></div></div></div></section>
+    <section className="public-how public-container"><div><span className="eyebrow">A clear path to growth</span><h2>Strategize.<br/><em>Optimize. Grow.</em></h2></div><div className="how-steps"><article><span>01</span><h3>Start with your vision</h3><p>Tell us what you want to achieve and what is getting in the way.</p></article><article><span>02</span><h3>Build the right strategy</h3><p>Focus on the audience, brand, and tools that will move your business forward.</p></article><article><span>03</span><h3>Grow with intention</h3><p>Leave with a clear next step, whether you need visibility, sustainability, or a broader business plan.</p></article></div></section>
+    <section className="closing-band"><div className="public-container closing-inner"><div><span className="eyebrow">Ready to bring your vision to life?</span><h2>Let’s build your<br/>next chapter.</h2></div>{profile ? <Link href="/intake" className="btn btn-brass">Start your assessment <ArrowRight size={16}/></Link> : <p className="website-intake-note">The online assessment is being prepared. Please check back soon.</p>}</div></section>
+    <footer className="public-footer public-container"><Wordmark/><span>Boss Mom Consulting · Strategize. Optimize. Grow.</span><a href={signInHref}>Owner sign in <ArrowRight size={14}/></a></footer>
   </div>;
 }
 
@@ -263,7 +280,8 @@ export function LeadDetailPage({ id }: { id?: string }) {
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
-  const { user } = useUser();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
   const settingsQuery = useGetLeadSettings();
   const saveSettings = useUpdateLeadSettings();
   const settings = settingsQuery.data;
@@ -373,7 +391,8 @@ function AssessmentResult({ result, profile }: { result: PublicLeadResult; profi
     <div className="result-summary"><span className="eyebrow">YOUR CONSULTING BRIEF</span><p>{result.reportSummary}</p></div>
     <div className="readiness-row"><span>BRIEF READINESS</span><div className="readiness-meter"><i style={{width:`${result.readinessScore}%`}}/></div><b>{result.readinessScore}<small>/100</small></b></div>
     <p className="score-caption">Based on the detail in your answers—not a technical audit score.</p>
-    <div className="result-next"><Sprout size={19}/><span>Your assessment has been saved for {result.businessName} to review. For service options, continue to Fiverr.</span></div>
+    <div className="result-next"><Sprout size={19}/><span>Your assessment has been submitted and saved for {result.businessName} to review. You can also request a 15-minute consultation below.</span></div>
+    <ConsultationRequestForm bookingToken={result.bookingToken} businessName={result.businessName} websiteUrl={profile.websiteUrl}/>
     <div className="result-links">
       {profile.websiteUrl && <a className="btn btn-outline" href={profile.websiteUrl} target="_blank" rel="noreferrer">Visit website <ExternalLink size={14}/></a>}
       {profile.fiverrUrl && <a className="btn btn-solid" href={profile.fiverrUrl} target="_blank" rel="noopener noreferrer">Choose a service on Fiverr <ExternalLink size={14}/></a>}
@@ -384,9 +403,171 @@ function AssessmentResult({ result, profile }: { result: PublicLeadResult; profi
   </main>;
 }
 
+function ConsultationRequestForm({
+  bookingToken,
+  businessName,
+  websiteUrl,
+}: {
+  bookingToken: string;
+  businessName: string;
+  websiteUrl: string | null | undefined;
+}) {
+  const request = useRequestConsultation();
+  const slots = useMemo(() => getConsultationSlots(), []);
+  const availableDates = [...new Map(slots.map((slot) => [slot.date, slot.dateLabel]))];
+  const [selectedDate, setSelectedDate] = useState(availableDates[0]?.[0] ?? '');
+  const [selectedSlot, setSelectedSlot] = useState('');
+  const [meetingType, setMeetingType] = useState<'zoom' | 'phone'>('zoom');
+  const [phone, setPhone] = useState('');
+  const [requestResult, setRequestResult] = useState<ConsultationRequestResult | null>(null);
+  const daySlots = slots.filter((slot) => slot.date === selectedDate);
+
+  function submitRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedSlot) return;
+    request.mutate({
+      data: {
+        bookingToken,
+        startsAt: selectedSlot,
+        meetingType,
+        phone: meetingType === 'phone' ? phone.trim() : null,
+      },
+    }, { onSuccess: data => setRequestResult(data) });
+  }
+
+  return <section className="consultation-offer" aria-labelledby="consultation-heading">
+    <span className="eyebrow">OPTIONAL NEXT STEP</span>
+    <h2 id="consultation-heading">Request a 15-minute consultation</h2>
+    <p className="consultation-intro">Choose a preferred time and how you’d like to meet. This is a request, not a confirmed appointment; the owner must reply before it is booked.</p>
+    {requestResult ? <div className="consultation-confirmation" role="status">
+      <div className="consultation-confirmation-icon"><CheckCircle2 size={19}/></div>
+      <div>
+        <b>Your consultation request is saved.</b>
+        {requestResult.notificationSent
+          ? <p>{businessName} has been notified and will reply to your email to confirm the time. If you chose Zoom, the link will be included in the confirmation.</p>
+          : <p>The request is saved, but we couldn’t notify {businessName}. {websiteUrl ? <a href={websiteUrl} target="_blank" rel="noreferrer">Contact the business through its website.</a> : 'Please contact the business directly to confirm.'}</p>}
+      </div>
+    </div> : slots.length === 0 ? <div className="consultation-confirmation" role="status">
+      <div className="consultation-confirmation-icon"><CalendarDays size={19}/></div>
+      <div><b>No request times are available right now.</b><p>{websiteUrl ? <a href={websiteUrl} target="_blank" rel="noreferrer">Contact {businessName} through the website.</a> : 'Please check back with the business for a suitable time.'}</p></div>
+    </div> : <form className="consultation-form" onSubmit={submitRequest}>
+      <div className="consultation-field-row">
+        <label className="form-field"><span>Preferred day</span><select required value={selectedDate} onChange={event => { setSelectedDate(event.target.value); setSelectedSlot(''); }}>
+          {availableDates.map(([date, label]) => <option key={date} value={date}>{label}</option>)}
+        </select></label>
+        <label className="form-field"><span>Preferred time <small>Pacific Time</small></span><select required value={selectedSlot} onChange={event => setSelectedSlot(event.target.value)}>
+          <option value="" disabled>Select a time</option>
+          {daySlots.map(slot => <option key={slot.startsAt} value={slot.startsAt}>{slot.timeLabel}</option>)}
+        </select></label>
+      </div>
+      <span className="field-label">How would you like to meet?</span>
+      <div className="consultation-methods">
+        <button type="button" className={cx('consultation-method', meetingType === 'zoom' && 'consultation-method-active')} aria-pressed={meetingType === 'zoom'} onClick={() => setMeetingType('zoom')}><Video size={16}/> Zoom</button>
+        <button type="button" className={cx('consultation-method', meetingType === 'phone' && 'consultation-method-active')} aria-pressed={meetingType === 'phone'} onClick={() => setMeetingType('phone')}><Phone size={16}/> Phone</button>
+      </div>
+      {meetingType === 'phone' && <label className="form-field consultation-phone"><span>Phone number</span><input type="tel" autoComplete="tel" required minLength={7} maxLength={40} value={phone} onChange={event => setPhone(event.target.value)} placeholder="Your best callback number"/></label>}
+      {request.isError && <p className="inline-error consultation-error" role="alert">We couldn’t save your consultation request. Please try again.</p>}
+      <button className="btn btn-solid consultation-submit" type="submit" disabled={request.isPending || !selectedSlot}>{request.isPending ? 'Sending request…' : 'Request this time'} <ArrowRight size={14}/></button>
+    </form>}
+  </section>;
+}
+
+function NeonAuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  const [, setLocation] = useLocation();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setNotice(null);
+    setIsPending(true);
+    try {
+      const result = mode === 'sign-up'
+        ? await authClient.signUp.email({ name: name.trim(), email: email.trim(), password })
+        : await authClient.signIn.email({ email: email.trim(), password });
+      if (result.error) {
+        setError(result.error.message ?? 'Authentication failed.');
+      } else if (mode === 'sign-up' && !result.data?.token) {
+        setNotice('Check your email for the next step to finish creating your account.');
+      } else {
+        const sessionResult = await authClient.getSession();
+        if (sessionResult.error) {
+          setError(sessionResult.error.message ?? 'Could not load your account session.');
+        } else if (!sessionResult.data?.session) {
+          setError('Your account was created, but your session is not ready. Please sign in.');
+        } else {
+          setLocation('/dashboard');
+        }
+      }
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Authentication failed.');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  async function signInWithGoogle() {
+    setError(null);
+    setNotice(null);
+    setIsPending(true);
+    try {
+      const result = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: `${window.location.origin}${basePath}/dashboard`,
+      });
+      if (result.error) setError(result.error.message ?? 'Google sign-in failed.');
+    } catch (socialError) {
+      setError(socialError instanceof Error ? socialError.message : 'Google sign-in failed.');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  return <div className="neon-auth-card">
+    <div className="neon-auth-heading">
+      <h2>{mode === 'sign-in' ? 'Welcome back' : 'Set up your Boss Mom workspace'}</h2>
+      <p>{mode === 'sign-in' ? 'Pick up where your client work left off.' : 'A thoughtful start for your client work.'}</p>
+    </div>
+    {error && <div className="neon-auth-error" role="alert">{error}</div>}
+    {notice && <div className="neon-auth-notice" role="status">{notice}</div>}
+    <form className="neon-auth-form" onSubmit={submit}>
+      {mode === 'sign-up' && <label className="neon-auth-field">
+        <span>Name</span>
+        <input autoComplete="name" required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
+      </label>}
+      <label className="neon-auth-field">
+        <span>Email address</span>
+        <input type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} />
+      </label>
+      <label className="neon-auth-field">
+        <span>Password</span>
+        <input type="password" autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={event => setPassword(event.target.value)} />
+      </label>
+      <button className="neon-auth-submit" type="submit" disabled={isPending}>
+        {isPending ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : 'Create account'}
+      </button>
+    </form>
+    <div className="neon-auth-divider"><span>or</span></div>
+    <button className="neon-auth-google" type="button" disabled={isPending} onClick={signInWithGoogle}>
+      <span className="neon-google-mark" aria-hidden="true">G</span>Continue with Google
+    </button>
+    <p className="neon-auth-switch">
+      {mode === 'sign-in' ? 'New to the workspace?' : 'Already have an account?'}{' '}
+      <Link href={mode === 'sign-in' ? '/sign-up' : '/sign-in'}>
+        {mode === 'sign-in' ? 'Create an account' : 'Sign in'}
+      </Link>
+    </p>
+  </div>;
+}
+
 export function SignInPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`}/></div></div>;
+  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><NeonAuthForm mode="sign-in"/></div></div>;
 }
 export function SignUpPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">A BETTER FIRST CONVERSATION</span><h1>Make space for<br/>better client work.</h1><p>Set up your practice profile and build an intake that asks the right things.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`}/></div></div>;
+  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">A BETTER FIRST CONVERSATION</span><h1>Make space for<br/>better client work.</h1><p>Set up your practice profile and build an intake that asks the right things.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><NeonAuthForm mode="sign-up"/></div></div>;
 }

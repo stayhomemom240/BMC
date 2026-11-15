@@ -1,5 +1,7 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="40" fill="#7f2b41"/>
-  <circle cx="90" cy="90" r="66" stroke="#e8c9d0" stroke-width="2"/>
-  <text x="90" y="112" text-anchor="middle" fill="#fff9f4" font-family="Georgia,serif" font-size="60" font-weight="700" letter-spacing="-5">BM</text>
+  <rect width="180" height="180" rx="40" fill="#5a162f"/>
+  <circle cx="90" cy="90" r="66" stroke="#d7b86f" stroke-width="2"/>
+  <path d="m49 71-9-26 26 17 24-33 24 33 26-17-9 26H49Z" fill="#d7b86f"/>
+  <path d="M51 78h78" stroke="#d7b86f" stroke-width="2"/>
+  <text x="90" y="126" text-anchor="middle" fill="#fffaf2" font-family="Georgia,serif" font-size="40" font-weight="700" letter-spacing="-2">BMC</text>
 </svg>

@@ -324,11 +324,33 @@ export const submitPublicLeadResponseReadinessScoreMax = 100;
 
 export const SubmitPublicLeadResponse = zod.object({
   "id": zod.number().int(),
+  "bookingToken": zod.string().uuid(),
   "businessName": zod.string(),
   "serviceType": zod.enum(['local-seo', 'zero-waste', 'general']),
   "readinessScore": zod.number().int().min(submitPublicLeadResponseReadinessScoreMin).max(submitPublicLeadResponseReadinessScoreMax),
   "reportTitle": zod.string(),
   "reportSummary": zod.string()
+})
+
+
+/**
+ * @summary Request a consultation time for a submitted assessment
+ */
+export const requestConsultationBodyPhoneMin = 7;
+export const requestConsultationBodyPhoneMax = 40;
+
+
+
+export const RequestConsultationBody = zod.object({
+  "bookingToken": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "meetingType": zod.enum(['zoom', 'phone']),
+  "phone": zod.string().min(requestConsultationBodyPhoneMin).max(requestConsultationBodyPhoneMax).nullish()
+})
+
+export const RequestConsultationResponse = zod.object({
+  "id": zod.number().int(),
+  "notificationSent": zod.boolean()
 })
 
 

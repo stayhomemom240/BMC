@@ -19,3 +19,4 @@
 
 export * from "./lead-settings";
 export * from "./leads";
+export * from "./consultation-requests";
