@@ -201,9 +201,11 @@ router.get("/leads", requireAuth, async (_req, res): Promise<void> => {
     )
     .where(eq(leadsTable.ownerId, ownerId))
     .orderBy(desc(leadsTable.createdAt));
+  
+  const leadArray = Array.isArray(rows) ? rows : [];
   res.json(
     ListLeadsResponse.parse(
-      rows.map(({ lead, consultation }) =>
+      leadArray.map(({ lead, consultation }) =>
         serializeLeadWithConsultation(lead, consultation),
       ),
     ),
@@ -462,25 +464,26 @@ router.get(
       .from(leadsTable)
       .where(eq(leadsTable.ownerId, ownerId));
 
+    const safeLeads = Array.isArray(leads) ? leads : [];
     const now = new Date();
     const monthStart = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
     );
-    const wonLeads = leads.filter((lead) => lead.stage === "won").length;
+    const wonLeads = safeLeads.filter((lead) => lead.stage === "won").length;
     const response = {
-      totalLeads: leads.length,
-      newLeads: leads.filter((lead) => lead.stage === "new").length,
-      activeLeads: leads.filter((lead) =>
+      totalLeads: safeLeads.length,
+      newLeads: safeLeads.filter((lead) => lead.stage === "new").length,
+      activeLeads: safeLeads.filter((lead) =>
         ["contacted", "proposal"].includes(lead.stage),
       ).length,
       wonLeads,
-      winRate: leads.length
-        ? Math.round((wonLeads / leads.length) * 1000) / 10
+      winRate: safeLeads.length
+        ? Math.round((wonLeads / safeLeads.length) * 1000) / 10
         : 0,
-      leadsThisMonth: leads.filter((lead) => lead.createdAt >= monthStart).length,
+      leadsThisMonth: safeLeads.filter((lead) => lead.createdAt >= monthStart).length,
       serviceBreakdown: serviceTypes.map((serviceType) => ({
         serviceType,
-        count: leads.filter((lead) => lead.serviceType === serviceType).length,
+        count: safeLeads.filter((lead) => lead.serviceType === serviceType).length,
       })),
     };
     res.json(GetLeadInsightsResponse.parse(response));
@@ -623,7 +626,8 @@ router.post("/public/leads", async (req, res): Promise<void> => {
     res.status(404).json({ error: "This assessment link is not available." });
     return;
   }
-  if (!settings.enabledServices.includes(input.serviceType)) {
+  const enabledServicesArray = Array.isArray(settings.enabledServices) ? settings.enabledServices : [];
+  if (!enabledServicesArray.includes(input.serviceType)) {
     res.status(400).json({ error: "That service is not currently offered." });
     return;
   }

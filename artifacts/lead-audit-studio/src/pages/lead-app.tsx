@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import './lead-app.css';
 import { Link, useLocation } from 'wouter';
 import { authClient } from '@/lib/auth';
@@ -37,9 +37,9 @@ const stageLabel: Record<LeadStage, string> = {
 };
 const cx = (...values: Array<string | false | undefined>) => values.filter(Boolean).join(' ');
 const dateLabel = (value: string) => new Date(value).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
-const numberedSummary = (summary: string) => summary.split(/\r?\n/).filter(Boolean).map((line, index) =>
+const numberedSummary = (summary: string) => (summary ? summary.split(/\r?\n/).filter(Boolean).map((line, index) =>
   /^\d+\.\s/.test(line) ? line : `${index + 1}. ${line}`,
-).join('\n');
+).join('\n') : '');
 const consultationTimeLabel = (value: string) => new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Los_Angeles', weekday: 'short', month: 'short', day: 'numeric',
   hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
@@ -193,8 +193,12 @@ export function DashboardPage() {
   const leads = useListLeads();
   const health = useHealthCheck();
   const data = insights.data as LeadInsights | undefined;
+  
+  const leadsArray = Array.isArray(leads.data) ? leads.data : [];
   const hasUnexpectedLeadResponse = leads.data !== undefined && !Array.isArray(leads.data);
-  const recent = [...(Array.isArray(leads.data) ? leads.data : [])].sort((a,b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0,5);
+  const recent = [...leadsArray].sort((a,b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0,5);
+  const serviceBreakdownData = Array.isArray(data?.serviceBreakdown) ? data.serviceBreakdown : [];
+
   return <AppShell active="/dashboard"><div className="page-content">
     <div className="dashboard-topline"><span className="eyebrow"><span className="status-dot"/>BOSS MOM CONSULTING / OVERVIEW</span><span className="health-label"><span className={cx('health-dot', health.isError && 'health-bad')}/>{health.isError ? 'Connection needs attention' : 'Workspace ready'}</span></div>
     <SectionHeading eyebrow="The overview" title="A good day to follow up." detail="A clear read on the conversations in your care.">
@@ -212,7 +216,7 @@ export function DashboardPage() {
         {leads.isLoading ? <div className="list-skeletons">{[1,2,3].map(x=><div className="skeleton skeleton-row" key={x}/>)}</div> : leads.isError ? <ErrorPanel retry={() => leads.refetch()} message="Recent leads could not be loaded."/> : hasUnexpectedLeadResponse ? <ErrorPanel retry={() => leads.refetch()} message="The API returned an unexpected response. Check the Cloudflare Pages API proxy configuration."/> : recent.length === 0 ? <EmptyPanel title="Your next conversation starts here" detail="Share your intake link and your first lead will appear here." action={<Link className="btn btn-outline" href="/settings">Set up your intake link <ArrowRight size={15}/></Link>}/> : <div className="lead-list">{recent.map(lead=><LeadRow key={lead.id} lead={lead}/>)}</div>}
       </section>
       <section className="insight-panel"><span className="eyebrow">A small signal</span><h2>What’s coming<br/>through the door</h2><p>Assessments by service, to help you see what clients are asking for.</p>
-        {insights.isLoading ? <div className="skeleton skeleton-chart"/> : insights.isError ? <button className="mini-retry" onClick={() => insights.refetch()}>Retry insights</button> : data?.serviceBreakdown?.length ? <ServiceBreakdown data={data.serviceBreakdown}/> : <div className="chart-empty"><span>No pattern yet</span><small>Your first client assessment will start the picture.</small></div>}
+        {insights.isLoading ? <div className="skeleton skeleton-chart"/> : insights.isError ? <button className="mini-retry" onClick={() => insights.refetch()}>Retry insights</button> : serviceBreakdownData.length > 0 ? <ServiceBreakdown data={serviceBreakdownData}/> : <div className="chart-empty"><span>No pattern yet</span><small>Your first client assessment will start the picture.</small></div>}
         <div className="month-total"><span>NEW THIS MONTH</span><b>{data?.leadsThisMonth ?? 0}</b><small>conversations</small></div>
       </section>
     </div>
@@ -220,9 +224,10 @@ export function DashboardPage() {
 }
 
 function ServiceBreakdown({ data }: { data: LeadInsights['serviceBreakdown'] }) {
-  const max = Math.max(1, ...data.map(x=>x.count));
+  const safeData = Array.isArray(data) ? data : [];
+  const max = Math.max(1, ...safeData.map(x=>x.count));
   const colors: Record<ServiceType,string> = {'local-seo':'#8f2d43','zero-waste':'#c7768d',general:'#b98d6d'};
-  return <div className="service-chart">{data.map(row=><div className="chart-row" key={row.serviceType}><div className="chart-label"><span>{offerLabels[row.serviceType]}</span><b>{row.count}</b></div><div className="chart-track"><i style={{ width: `${Math.max(4,row.count/max*100)}%`, background: colors[row.serviceType] }}/></div></div>)}</div>;
+  return <div className="service-chart">{safeData.map(row=><div className="chart-row" key={row.serviceType}><div className="chart-label"><span>{offerLabels[row.serviceType]}</span><b>{row.count}</b></div><div className="chart-track"><i style={{ width: `${Math.max(4,row.count/max*100)}%`, background: colors[row.serviceType] }}/></div></div>)}</div>;
 }
 
 export function LeadsPage() {
@@ -233,20 +238,24 @@ export function LeadsPage() {
   const [stageFilter, setStageFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [draft, setDraft] = useState({ name: '', email: '', serviceType: 'general' as ServiceType });
+  
+  const leadsArray = Array.isArray(leadsQuery.data) ? leadsQuery.data : [];
   const hasUnexpectedLeadResponse = leadsQuery.data !== undefined && !Array.isArray(leadsQuery.data);
-  const filtered = useMemo(() => (Array.isArray(leadsQuery.data) ? leadsQuery.data : []).filter(lead => {
+  
+  const filtered = useMemo(() => leadsArray.filter(lead => {
     const term = search.toLowerCase();
     const matches = `${getLeadDisplayName(lead)} ${lead.email} ${lead.company || ''}`.toLowerCase().includes(term);
     return matches && (stageFilter === 'all' || lead.stage === stageFilter);
-  }).sort((a,b)=>+new Date(b.createdAt)-+new Date(a.createdAt)), [leadsQuery.data, search, stageFilter]);
-  function handleCreate(event: FormEvent) {
+  }).sort((a,b)=>+new Date(b.createdAt)-+new Date(a.createdAt)), [leadsArray, search, stageFilter]);
+  
+  function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     createLead.mutate({ data: { name: draft.name, email: draft.email, serviceType: draft.serviceType, goals: 'To be discussed', challenge: 'To be discussed', timeline: 'Not specified' } }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListLeadsQueryKey() }); queryClient.invalidateQueries({ queryKey: getGetLeadInsightsQueryKey() }); setShowCreate(false); setDraft({name:'',email:'',serviceType:'general'}); },
     });
   }
   return <AppShell active="/leads"><div className="page-content">
-    <SectionHeading eyebrow="Lead book" title="Every conversation, in one place." detail={`${leadsQuery.data?.length ?? 0} conversations recorded`}>
+    <SectionHeading eyebrow="Lead book" title="Every conversation, in one place." detail={`${leadsArray.length} conversations recorded`}>
       <Button onClick={() => setShowCreate(!showCreate)}><Plus size={16}/> Add a lead</Button>
     </SectionHeading>
     {showCreate && <form className="create-lead-form" onSubmit={handleCreate}><div><span className="eyebrow">A conversation from elsewhere?</span><b>Add it to your book</b></div><input required placeholder="Name" aria-label="Name" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})} data-testid="input-new-lead-name"/><input required type="email" placeholder="Email" aria-label="Email" value={draft.email} onChange={e=>setDraft({...draft,email:e.target.value})} data-testid="input-new-lead-email"/><select aria-label="Service" value={draft.serviceType} onChange={e=>setDraft({...draft,serviceType:e.target.value as ServiceType})}>{Object.entries(offerLabels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select><Button type="submit" disabled={createLead.isPending}>{createLead.isPending ? 'Saving…' : 'Save lead'}</Button><button type="button" className="icon-button" aria-label="Close add lead form" onClick={()=>setShowCreate(false)}><X size={18}/></button></form>}
@@ -337,8 +346,10 @@ function ConsultationFollowup({
         queryClient.setQueryData<Lead>(getGetLeadQueryKey(lead.id), current => current
           ? { ...current, consultation: result.consultation }
           : current);
-        queryClient.setQueryData<Lead[]>(getListLeadsQueryKey(), current => current?.map(item =>
-          item.id === lead.id ? { ...item, consultation: result.consultation } : item));
+        queryClient.setQueryData<Lead[]>(getListLeadsQueryKey(), current => {
+          const safeCurrent = Array.isArray(current) ? current : [];
+          return safeCurrent.map(item => item.id === lead.id ? { ...item, consultation: result.consultation } : item);
+        });
         setEmailNotice(result.notificationSent
           ? 'Your response was emailed to the prospect.'
           : 'The appointment status was saved, but the email could not be sent.');
@@ -386,10 +397,15 @@ export function SettingsPage() {
   const saveSettings = useUpdateLeadSettings();
   const settings = settingsQuery.data;
   const [form, setForm] = useState<LeadSettingsInput | null>(null);
+  
+  const rawEnabledServices = settings?.enabledServices;
+  const safeEnabledServices = Array.isArray(rawEnabledServices) ? rawEnabledServices : ['local-seo', 'zero-waste', 'general'] as ServiceType[];
+
   const value = form ?? (settings ? {
-    businessName: settings.businessName, tagline: settings.tagline, enabledServices: settings.enabledServices,
+    businessName: settings.businessName, tagline: settings.tagline, enabledServices: safeEnabledServices,
     publishOnWebsite: settings.publishOnWebsite, websiteUrl: settings.websiteUrl || '', fiverrUrl: settings.fiverrUrl || '',
   } : { businessName: 'Boss Mom Consulting', tagline: '', enabledServices: ['local-seo','zero-waste','general'] as ServiceType[], publishOnWebsite: false, websiteUrl: '', fiverrUrl: '' });
+  
   const publicUrl = `${window.location.origin}${basePath}/intake?owner=${encodeURIComponent(user?.id || '')}`;
   const patch = (next: Partial<LeadSettingsInput>) => setForm({...value, ...next});
   async function copyLink() {
@@ -397,9 +413,10 @@ export function SettingsPage() {
   }
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
-  function submit(event: FormEvent) {
+  function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    saveSettings.mutate({ data: { ...value, websiteUrl: value.websiteUrl || null, fiverrUrl: value.fiverrUrl || null } }, {
+    const currentServices = Array.isArray(value.enabledServices) ? value.enabledServices : [];
+    saveSettings.mutate({ data: { ...value, enabledServices: currentServices, websiteUrl: value.websiteUrl || null, fiverrUrl: value.fiverrUrl || null } }, {
       onSuccess: saved => {
         queryClient.setQueryData(getGetLeadSettingsQueryKey(), saved);
         queryClient.invalidateQueries({ queryKey: getGetLeadSettingsQueryKey() });
@@ -410,17 +427,20 @@ export function SettingsPage() {
   }
   if (settingsQuery.isLoading) return <AppShell active="/settings"><div className="page-content"><LoadingPanel label="Loading practice details"/></div></AppShell>;
   if (settingsQuery.isError) return <AppShell active="/settings"><div className="page-content"><SectionHeading eyebrow="Practice settings" title="Set the tone."/><ErrorPanel retry={()=>settingsQuery.refetch()} message="Your profile details could not be loaded."/></div></AppShell>;
+  
+  const currentServicesList = Array.isArray(value.enabledServices) ? value.enabledServices : [];
+
   return <AppShell active="/settings"><div className="page-content settings-page">
     <SectionHeading eyebrow="Practice settings" title="Set the tone." detail="Your practice details shape the first impression prospects receive."/>
     <form onSubmit={submit} className="settings-form">
      <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">01</span><div><h2>Your business</h2><p>A clear name and a line about the work you do.</p></div></div><div className="form-grid"><label className="form-field full"><span>Business name</span><input required maxLength={160} value={value.businessName} onChange={e=>patch({businessName:e.target.value})} placeholder="Boss Mom Consulting" data-testid="input-business-name"/></label><label className="form-field full"><span>Short introduction <small>Up to 500 characters</small></span><textarea maxLength={500} rows={3} value={value.tagline} onChange={e=>patch({tagline:e.target.value})} placeholder="Local visibility, zero-waste goals, and practical next steps for small businesses." data-testid="input-tagline"/></label></div></section>
       <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">02</span><div><h2>Choose your assessments</h2><p>Keep the intake focused on the kind of work you take on.</p></div></div><div className="service-options">
-        {(['local-seo','zero-waste','general'] as ServiceType[]).map((service,index)=><label className={cx('service-option', value.enabledServices.includes(service) && 'service-option-active')} key={service}><input type="checkbox" checked={value.enabledServices.includes(service)} onChange={e=>patch({enabledServices:e.target.checked ? [...value.enabledServices,service] : value.enabledServices.filter(x=>x!==service)})} data-testid={`checkbox-service-${service}`}/><span className="service-option-icon">{index === 0 ? <MapPin/> : index === 1 ? <Leaf/> : <Target/>}</span><span><b>{offerLabels[service]}</b><small>{service==='local-seo' ? 'Google Business Profile, local citations and on-page visibility.' : service==='zero-waste' ? 'Baseline, source reduction, reuse and practical diversion.' : 'Goals, priorities, business context and next steps.'}</small></span><span className="option-check"><Check size={14}/></span></label>)}
-      </div>{value.enabledServices.length===0 && <div className="inline-error">Choose at least one assessment to continue.</div>}</section>
+        {(['local-seo','zero-waste','general'] as ServiceType[]).map((service,index)=><label className={cx('service-option', currentServicesList.includes(service) && 'service-option-active')} key={service}><input type="checkbox" checked={currentServicesList.includes(service)} onChange={e=>patch({enabledServices:e.target.checked ? [...currentServicesList,service] : currentServicesList.filter(x=>x!==service)})} data-testid={`checkbox-service-${service}`}/><span className="service-option-icon">{index === 0 ? <MapPin/> : index === 1 ? <Leaf/> : <Target/>}</span><span><b>{offerLabels[service]}</b><small>{service==='local-seo' ? 'Google Business Profile, local citations and on-page visibility.' : service==='zero-waste' ? 'Baseline, source reduction, reuse and practical diversion.' : 'Goals, priorities, business context and next steps.'}</small></span><span className="option-check"><Check size={14}/></span></label>)}
+      </div>{currentServicesList.length===0 && <div className="inline-error">Choose at least one assessment to continue.</div>}</section>
       <section className="paper-panel settings-section"><div className="settings-section-title"><span className="section-number">03</span><div><h2>Places to find you</h2><p>Optional links are shown with your public intake page.</p></div></div><div className="form-grid"><label className="form-field"><span><Globe2 size={15}/>Website</span><input type="url" value={value.websiteUrl || ''} onChange={e=>patch({websiteUrl:e.target.value})} placeholder="https://yourstudio.com" data-testid="input-website-url"/></label><label className="form-field"><span><ExternalLink size={15}/>Fiverr profile</span><input type="url" value={value.fiverrUrl || ''} onChange={e=>patch({fiverrUrl:e.target.value})} placeholder="https://www.fiverr.com/…" data-testid="input-fiverr-url"/></label></div></section>
       <section className="intake-link-panel"><div className="link-panel-copy"><span className="eyebrow">PUBLIC INTAKE LINK</span><h2>Ready for your website.</h2><p>Anyone with this link can submit—no invitation or account is needed. Add it to your website, email, or social profile.</p></div><label className="publish-toggle"><input type="checkbox" checked={value.publishOnWebsite} onChange={e=>patch({publishOnWebsite:e.target.checked})}/><span><b>Show assessment on this website</b><small>Add a public intake button to the Boss Mom Consulting home page.</small></span></label><div className="copy-url"><Link2 size={16}/><span>{publicUrl}</span><Button variant="outline" onClick={copyLink}><Copy size={15}/>{copied?'Copied':'Copy public link'}</Button></div>{copyError && <small className="copy-error">Could not copy automatically. Select the link to copy it manually.</small>}</section>
       {saveSettings.isError && <div className="inline-error">Your practice settings could not be saved. Please try again.</div>}
-      <div className="settings-submit"><span>Changes take effect on your next shared intake link view.</span><Button type="submit" disabled={saveSettings.isPending || value.enabledServices.length===0}>{saveSettings.isPending?'Saving changes…':'Save practice details'} <ArrowRight size={15}/></Button></div>
+      <div className="settings-submit"><span>Changes take effect on your next shared intake link view.</span><Button type="submit" disabled={saveSettings.isPending || currentServicesList.length===0}>{saveSettings.isPending?'Saving changes…':'Save practice details'} <ArrowRight size={15}/></Button></div>
     </form>
   </div></AppShell>;
 }
@@ -445,7 +465,8 @@ export function IntakePage() {
   const [result, setResult] = useState<PublicLeadResult | null>(null);
   const [form, setForm] = useState({name:'', email:'', company:'', website:'', industry:'', goals:'', challenge:'', timeline:'Within the next month'});
   const profile = profileQuery.data;
-  const available = profile?.enabledServices || [];
+  
+  const available = Array.isArray(profile?.enabledServices) ? profile.enabledServices : [];
   const content = service ? questionThemes[service] : questionThemes.general;
   const canContinue = step === 0
     ? !!service && !!form.name.trim() && /^\S+@\S+\.\S+$/.test(form.email)
@@ -453,7 +474,7 @@ export function IntakePage() {
   const update = (key: keyof typeof form, value: string) => setForm(current=>({...current,[key]:value}));
   const next = () => setStep(value=>Math.min(2,value+1));
   const previous = () => setStep(value=>Math.max(0,value-1));
-  function submitIntake(event: FormEvent) {
+  function submitIntake(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!ownerId || !service) return;
     submit.mutate({ data: { ownerId, name:form.name, email:form.email, company:form.company || null, website:form.website || null, serviceType:service, industry:form.industry || null, goals:form.goals, challenge:form.challenge, timeline:form.timeline } }, { onSuccess: data=>setResult(data) });
@@ -513,7 +534,8 @@ function ConsultationRequestForm({
   websiteUrl: string | null | undefined;
 }) {
   const request = useRequestConsultation();
-  const slots = useMemo(() => getConsultationSlots(), []);
+  const rawSlots = getConsultationSlots();
+  const slots = Array.isArray(rawSlots) ? rawSlots : [];
   const availableDates = [...new Map(slots.map((slot) => [slot.date, slot.dateLabel]))];
   const [selectedDate, setSelectedDate] = useState(availableDates[0]?.[0] ?? '');
   const [selectedSlot, setSelectedSlot] = useState('');
@@ -522,7 +544,7 @@ function ConsultationRequestForm({
   const [requestResult, setRequestResult] = useState<ConsultationRequestResult | null>(null);
   const daySlots = slots.filter((slot) => slot.date === selectedDate);
 
-  function submitRequest(event: FormEvent<HTMLFormElement>) {
+  function submitRequest(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedSlot) return;
     request.mutate({
@@ -579,7 +601,7 @@ function NeonAuthForm() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setIsPending(true);
@@ -639,7 +661,7 @@ export function ForgotPasswordPage() {
   const [isPending, setIsPending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setIsPending(true);
@@ -684,7 +706,7 @@ export function ResetPasswordPage() {
   const [isComplete, setIsComplete] = useState(false);
   const token = new URLSearchParams(window.location.search).get('token');
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     if (!token) {
