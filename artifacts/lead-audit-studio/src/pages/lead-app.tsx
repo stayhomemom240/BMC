@@ -607,9 +607,112 @@ function NeonAuthForm() {
       </label>
       <button className="neon-auth-submit" type="submit" disabled={isPending}>{isPending ? 'Please wait…' : 'Sign in'}</button>
     </form>
+    <p className="neon-auth-switch"><Link href="/forgot-password">Forgot your password?</Link></p>
   </div>;
 }
 
+function AuthPageFrame({ children }: { children: ReactNode }) {
+  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link>{children}</div></div>;
+}
+
 export function SignInPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><NeonAuthForm/></div></div>;
+  return <AuthPageFrame><NeonAuthForm/></AuthPageFrame>;
+}
+
+export function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsPending(true);
+    try {
+      const redirectTo = `${window.location.origin}${basePath}/reset-password`;
+      const result = await authClient.requestPasswordReset({ email: email.trim(), redirectTo });
+      if (result.error) {
+        setError(result.error.message ?? 'Could not send the password reset email. Please try again.');
+      } else {
+        setIsSent(true);
+      }
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Could not send the password reset email. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  return <AuthPageFrame><div className="neon-auth-card">
+    <div className="neon-auth-heading">
+      <h2>Reset your password</h2>
+      <p>Enter your account email and we’ll send you a reset link.</p>
+    </div>
+    {error && <div className="neon-auth-error" role="alert">{error}</div>}
+    {isSent ? <div className="neon-auth-notice" role="status">If an account exists for that email, a password reset link is on its way. The link expires after 15 minutes.</div> : <form className="neon-auth-form" onSubmit={submit}>
+      <label className="neon-auth-field">
+        <span>Email address</span>
+        <input type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} />
+      </label>
+      <button className="neon-auth-submit" type="submit" disabled={isPending}>{isPending ? 'Sending link…' : 'Send reset link'}</button>
+    </form>}
+    <p className="neon-auth-switch"><Link href="/sign-in">Return to sign in</Link></p>
+  </div></AuthPageFrame>;
+}
+
+export function ResetPasswordPage() {
+  const [, setLocation] = useLocation();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+  const token = new URLSearchParams(window.location.search).get('token');
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!token) {
+      setError('This reset link is invalid or has expired. Request a new one to continue.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('The passwords do not match.');
+      return;
+    }
+    setIsPending(true);
+    try {
+      const result = await authClient.resetPassword({ newPassword: password, token });
+      if (result.error) {
+        setError(result.error.message ?? 'Could not reset your password. Request a new reset link and try again.');
+      } else {
+        setIsComplete(true);
+      }
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Could not reset your password. Request a new reset link and try again.');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  return <AuthPageFrame><div className="neon-auth-card">
+    <div className="neon-auth-heading">
+      <h2>Choose a new password</h2>
+      <p>Use at least 8 characters for your new password.</p>
+    </div>
+    {error && <div className="neon-auth-error" role="alert">{error}</div>}
+    {isComplete ? <div className="neon-auth-notice" role="status">Your password has been updated. You can now sign in with your new password.</div> : token ? <form className="neon-auth-form" onSubmit={submit}>
+      <label className="neon-auth-field">
+        <span>New password</span>
+        <input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} />
+      </label>
+      <label className="neon-auth-field">
+        <span>Confirm new password</span>
+        <input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} />
+      </label>
+      <button className="neon-auth-submit" type="submit" disabled={isPending}>{isPending ? 'Updating password…' : 'Update password'}</button>
+    </form> : <div className="neon-auth-notice" role="status">This reset link is invalid or has expired. Request a new one to continue.</div>}
+    <p className="neon-auth-switch">{isComplete ? <button className="neon-auth-link" type="button" onClick={() => setLocation('/sign-in')}>Return to sign in</button> : <Link href="/forgot-password">Request another reset link</Link>}</p>
+  </div></AuthPageFrame>;
 }

@@ -30,6 +30,7 @@ Useful commands:
 - `pnpm --filter @workspace/db run push` — update a development database schema.
 
 The local Vite app uses `VITE_NEON_AUTH_URL` for the Neon Auth URL. The API uses `NEON_AUTH_BASE_URL` and `NEON_AUTH_JWKS_URL` to verify short-lived Neon Auth JWTs. For local sign-in, set the Vite URL to the same branch's `NEON_AUTH_BASE_URL`.
+Password reset is available from the sign-in page when **Sign-in with Email** is enabled in the Neon branch's **Settings → Better Auth**. Neon sends the reset link; configure a custom SMTP provider for production email delivery.
 
 ## Deploy
 

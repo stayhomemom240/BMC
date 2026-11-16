@@ -8,8 +8,8 @@ import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wo
 import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { authClient, getAuthToken } from '@/lib/auth';
 import {
-  DashboardPage, HomePage, IntakePage, LeadDetailPage, LeadsPage, SettingsPage,
-  SignInPage,
+  DashboardPage, ForgotPasswordPage, HomePage, IntakePage, LeadDetailPage,
+  LeadsPage, ResetPasswordPage, SettingsPage, SignInPage,
 } from '@/pages/lead-app';
 
 const queryClient = new QueryClient();
@@ -48,6 +48,8 @@ function AppRoutes() {
       <Route path="/" component={HomePage}/>
       <Route path="/about" component={HomePage}/>
       <Route path="/sign-in/*?" component={SignInPage}/>
+      <Route path="/forgot-password" component={ForgotPasswordPage}/>
+      <Route path="/reset-password" component={ResetPasswordPage}/>
       <Route path="/intake" component={IntakePage}/>
       <Route path="/dashboard">{()=><Protected><DashboardPage/></Protected>}</Route>
       <Route path="/leads">{()=><Protected><LeadsPage/></Protected>}</Route>
