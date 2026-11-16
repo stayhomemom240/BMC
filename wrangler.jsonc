@@ -1,5 +1,11 @@
 {
-  "name": "lead-insight-hub",
+  "name": "bmc",
   "compatibility_date": "2026-11-14",
-  "pages_build_output_dir": "./artifacts/lead-audit-studio/dist/public"
+  "assets": {
+    "directory": "./artifacts/lead-audit-studio/dist/public",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "API_ORIGIN": "https://bmc-f58f.onrender.com"
+  }
 }
