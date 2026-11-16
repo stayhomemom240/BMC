@@ -9,7 +9,7 @@ import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { authClient, getAuthToken } from '@/lib/auth';
 import {
   DashboardPage, HomePage, IntakePage, LeadDetailPage, LeadsPage, SettingsPage,
-  SignInPage, SignUpPage,
+  SignInPage,
 } from '@/pages/lead-app';
 
 const queryClient = new QueryClient();
@@ -48,7 +48,6 @@ function AppRoutes() {
       <Route path="/" component={HomePage}/>
       <Route path="/about" component={HomePage}/>
       <Route path="/sign-in/*?" component={SignInPage}/>
-      <Route path="/sign-up/*?" component={SignUpPage}/>
       <Route path="/intake" component={IntakePage}/>
       <Route path="/dashboard">{()=><Protected><DashboardPage/></Protected>}</Route>
       <Route path="/leads">{()=><Protected><LeadsPage/></Protected>}</Route>

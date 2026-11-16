@@ -19,7 +19,9 @@ Lead Insight Hub is the lead intake and follow-up workspace for Boss Mom Consult
 
 The local Vite server proxies `/api/*` to the API on port 5000. `DATABASE_URL` must point to a reachable PostgreSQL database. The API logs a warning and skips email notifications if any Resend setting is missing.
 
-After an assessment is submitted, a prospect can optionally request a 15-minute Zoom or phone consultation. Requests use Pacific Time and the configured weekly windows: Monday, Tuesday, Thursday, and Friday at 8:00–9:30 AM or 2:00–7:00 PM; Saturday and Sunday at 11:00 AM–3:00 PM. A selected time is a request only—the owner confirms by email and supplies the Zoom link.
+After an assessment is submitted, a prospect can optionally request a 15-minute Zoom or phone consultation. Requests use Pacific Time and the configured weekly windows: Monday, Tuesday, Thursday, and Friday at 8:00–9:30 AM or 2:00–7:00 PM; Saturday and Sunday at 11:00 AM–3:00 PM. A selected time is only a request; the owner can confirm, decline, or offer another time from the lead detail page.
+
+The owner workspace is single-owner: only the preconfigured owner account can sign in, and prospects never need an account to submit an assessment or request a call. Consultation requests appear with their lead and can be confirmed, declined, or answered with a proposed time from the lead detail page.
 
 Useful commands:
 
@@ -52,7 +54,7 @@ Use the included `render.yaml` Blueprint to create the Node web service. Set the
 
 ### Neon and Resend
 
-Use Neon PostgreSQL and put its connection string in `DATABASE_URL`; Neon connection strings should include SSL mode. Apply schema changes deliberately with Drizzle rather than relying on application startup. The consultation flow adds a booking token to leads and a consultation-request table; apply the schema to a development branch first with `pnpm --filter @workspace/db run push`, then apply it to production when ready.
+Use Neon PostgreSQL and put its connection string in `DATABASE_URL`; Neon connection strings should include SSL mode. Apply schema changes deliberately with Drizzle rather than relying on application startup. The consultation flow adds a booking token to leads and a consultation-request table; the owner follow-up workflow adds response-status and reply fields to that table. Apply schema changes to a development branch first with `pnpm --filter @workspace/db run push`, then apply them to production when ready.
 
 Configure Resend with:
 

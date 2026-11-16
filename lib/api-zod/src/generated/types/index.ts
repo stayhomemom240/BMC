@@ -6,9 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './consultation';
+export * from './consultationMeetingType';
 export * from './consultationRequestInput';
 export * from './consultationRequestInputMeetingType';
 export * from './consultationRequestResult';
+export * from './consultationResponse';
+export * from './consultationStatus';
 export * from './errorEnvelope';
 export * from './healthStatus';
 export * from './lead';
@@ -23,3 +27,5 @@ export * from './publicLeadResult';
 export * from './publicLeadSettings';
 export * from './serviceBreakdown';
 export * from './serviceType';
+export * from './updateConsultationInput';
+export * from './updateConsultationInputStatus';

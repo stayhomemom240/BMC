@@ -16,7 +16,7 @@ import {
   getGetPublicWebsiteProfileQueryKey,
   getListLeadsQueryKey, useCreateLead, useDeleteLead, useGetLead,
   useGetLeadInsights, useGetLeadSettings, useGetPublicLeadSettings, useGetPublicWebsiteProfile,
-  useHealthCheck, useListLeads, useRequestConsultation, useSubmitPublicLead, useUpdateLead,
+  useHealthCheck, useListLeads, useRequestConsultation, useRespondToConsultation, useSubmitPublicLead, useUpdateLead,
   useUpdateLeadSettings,
 } from '@workspace/api-client-react';
 import type {
@@ -37,6 +37,13 @@ const stageLabel: Record<LeadStage, string> = {
 };
 const cx = (...values: Array<string | false | undefined>) => values.filter(Boolean).join(' ');
 const dateLabel = (value: string) => new Date(value).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+const numberedSummary = (summary: string) => summary.split(/\r?\n/).filter(Boolean).map((line, index) =>
+  /^\d+\.\s/.test(line) ? line : `${index + 1}. ${line}`,
+).join('\n');
+const consultationTimeLabel = (value: string) => new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Los_Angeles', weekday: 'short', month: 'short', day: 'numeric',
+  hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+}).format(new Date(value));
 
 function Button({ children, onClick, variant = 'solid', type = 'button', disabled, className = '', testId }: {
   children: ReactNode; onClick?: () => void; variant?: 'solid' | 'quiet' | 'outline' | 'danger';
@@ -119,9 +126,13 @@ function OfferMark({ type, compact = false }: { type: ServiceType; compact?: boo
   return <span className={cx('offer-mark', `offer-${type}`)}><Icon size={compact ? 14 : 17}/>{!compact && offerLabels[type]}</span>;
 }
 function LeadRow({ lead }: { lead: Lead }) {
+  const consultation = lead.consultation;
+  const callTime = consultation?.status === 'reschedule_proposed' && consultation.responseSlotStart
+    ? consultation.responseSlotStart
+    : consultation?.slotStart;
   return <Link href={`/leads/${lead.id}`} className="lead-row" data-testid={`link-lead-${lead.id}`}>
     <span className="lead-avatar">{lead.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</span>
-    <span className="lead-person"><b>{lead.name}</b><small>{lead.company || lead.email}</small></span>
+    <span className="lead-person"><b>{lead.name}</b><small>{lead.company || lead.email}</small>{consultation && callTime && <small className="lead-call-state">Call {consultation.status.replaceAll('_', ' ')} · {dateLabel(callTime)}</small>}</span>
     <span className="lead-offer"><OfferMark type={lead.serviceType} compact/><span>{offerLabels[lead.serviceType]}</span></span>
     <StagePill stage={lead.stage}/><span className="lead-date">{dateLabel(lead.createdAt)}</span><ArrowRight size={16} className="row-arrow"/>
   </Link>;
@@ -269,13 +280,88 @@ export function LeadDetailPage({ id }: { id?: string }) {
     </section>
     {deleteLead.isError && <div className="inline-error">This lead could not be deleted. Please try again.</div>}
     <div className="detail-columns"><div className="detail-main">
-      <section className="paper-panel report-panel"><div className="panel-heading"><div><span className="eyebrow">THE CLIENT’S OWN WORDS</span><h2>What they’re working toward</h2></div><FileText size={19}/></div><div className="report-text">{lead.reportSummary || 'No report summary was included with this assessment.'}</div>
+      <section className="paper-panel report-panel"><div className="panel-heading"><div><span className="eyebrow">THE CLIENT’S OWN WORDS</span><h2>What they’re working toward</h2></div><FileText size={19}/></div><div className="report-text">{numberedSummary(lead.reportSummary || 'No report summary was included with this assessment.')}</div>
         <div className="report-prompt"><div><span className="eyebrow">THE GOAL</span><p>{lead.goals}</p></div><div><span className="eyebrow">THE CHALLENGE</span><p>{lead.challenge}</p></div></div>
         <div className="report-contact"><span><UserRound size={15}/>{lead.name}</span><a href={`mailto:${lead.email}`}>{lead.email} <ExternalLink size={13}/></a>{lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noreferrer"><Globe2 size={14}/>Website</a>}</div>
       </section>
+       {lead.consultation && <ConsultationFollowup lead={lead} consultation={lead.consultation}/>}
        <section className="paper-panel notes-panel"><div className="panel-heading"><div><span className="eyebrow">PRIVATE TO YOUR PRACTICE</span><h2>Working notes</h2></div><MessageSquareText size={19}/></div><textarea value={notesValue} onChange={e=>setNotes(e.target.value)} placeholder="Capture context, questions to ask, or a next step…" rows={5} data-testid="textarea-lead-notes"/><div className="notes-bottom"><small>Only visible in your workspace.</small><Button onClick={()=>update({notes:notesValue})} disabled={updateLead.isPending}>{updateLead.isPending ? 'Saving…' : 'Save notes'}</Button></div>{updateLead.isError && <div className="inline-error">Notes could not be saved.</div>}</section>
     </div><aside className="detail-side"><span className="eyebrow">NEXT STEP</span><h3>Keep the conversation moving.</h3><p>Move this lead as you follow up. The right stage makes tomorrow’s list clearer.</p><label className="stage-select-label">Pipeline stage<select value={lead.stage} disabled={updateLead.isPending} onChange={e=>update({stage:e.target.value as LeadStage})} data-testid="select-lead-stage">{stages.map(stage=><option key={stage} value={stage}>{stageLabel[stage]}</option>)}</select></label><div className="pipeline-steps">{stages.slice(0,4).map((stage,index)=><div className={cx('pipeline-step', stages.indexOf(lead.stage)>=index && lead.stage !== 'lost' && 'pipeline-done')} key={stage}><span>{stages.indexOf(lead.stage)>index ? <Check size={12}/> : index+1}</span>{stageLabel[stage]}</div>)}</div><div className="side-tip"><Sprout size={17}/><span>A timely, specific follow-up is usually more useful than a perfect one.</span></div>{updateLead.isError && <div className="inline-error">Stage could not be changed.</div>}</aside></div>
   </div></AppShell>;
+}
+
+function ConsultationFollowup({
+  lead,
+  consultation,
+}: {
+  lead: Lead;
+  consultation: NonNullable<Lead['consultation']>;
+}) {
+  const queryClient = useQueryClient();
+  const respond = useRespondToConsultation();
+  const [responseMessage, setResponseMessage] = useState('');
+  const [proposedStartsAt, setProposedStartsAt] = useState('');
+  const [meetingUrl, setMeetingUrl] = useState('');
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
+
+  function submitResponse(status: 'confirmed' | 'declined' | 'reschedule_proposed') {
+    setEmailNotice(null);
+    respond.mutate({
+      leadId: lead.id,
+      data: {
+        status,
+        responseMessage: responseMessage.trim() || null,
+        proposedStartsAt: status === 'reschedule_proposed'
+          ? new Date(proposedStartsAt).toISOString()
+          : null,
+        meetingUrl: status === 'confirmed' && consultation.meetingType === 'zoom'
+          ? meetingUrl.trim()
+          : null,
+      },
+    }, {
+      onSuccess: result => {
+        queryClient.setQueryData<Lead>(getGetLeadQueryKey(lead.id), current => current
+          ? { ...current, consultation: result.consultation }
+          : current);
+        queryClient.setQueryData<Lead[]>(getListLeadsQueryKey(), current => current?.map(item =>
+          item.id === lead.id ? { ...item, consultation: result.consultation } : item));
+        setEmailNotice(result.notificationSent
+          ? 'Your response was emailed to the prospect.'
+          : 'The appointment status was saved, but the email could not be sent.');
+      },
+    });
+  }
+
+  const statusLabel = consultation.status.replaceAll('_', ' ');
+  const displayedTime = consultation.status === 'reschedule_proposed' && consultation.responseSlotStart
+    ? consultation.responseSlotStart
+    : consultation.slotStart;
+
+  return <section className="paper-panel consultation-followup">
+    <div className="panel-heading"><div><span className="eyebrow">CONSULTATION REQUEST</span><h2>Follow up on the call</h2></div><CalendarDays size={19}/></div>
+    <div className="consultation-details">
+      <div><span>STATUS</span><b className={`consultation-status status-${consultation.status}`}>{statusLabel}</b></div>
+      <div><span>{consultation.status === 'reschedule_proposed' ? 'PROPOSED TIME' : 'REQUESTED TIME'}</span><b>{consultationTimeLabel(displayedTime)}</b></div>
+      <div><span>MEETING</span><b>{consultation.meetingType === 'zoom' ? 'Zoom' : `Phone · ${consultation.phone || 'number not provided'}`}</b></div>
+      {consultation.meetingUrl && <a href={consultation.meetingUrl} target="_blank" rel="noreferrer"><span>MEETING LINK</span><b>Open Zoom link <ExternalLink size={13}/></b></a>}
+    </div>
+    {consultation.responseMessage && <p className="consultation-response-message">{consultation.responseMessage}</p>}
+    <a className="consultation-email-link" href={`mailto:${lead.email}?subject=${encodeURIComponent(`Consultation follow-up for ${lead.name}`)}`}>
+      Email {lead.name} <ArrowRight size={14}/>
+    </a>
+    <div className="consultation-response-form">
+      <label className="form-field"><span>Your message <small>Optional</small></span><textarea rows={3} maxLength={2000} value={responseMessage} onChange={event => setResponseMessage(event.target.value)} placeholder="Add a personal note for the email…"/></label>
+      {consultation.meetingType === 'zoom' && <label className="form-field"><span>Zoom link <small>Required to confirm</small></span><input type="url" maxLength={500} value={meetingUrl} onChange={event => setMeetingUrl(event.target.value)} placeholder="https://zoom.us/j/…"/></label>}
+      <label className="form-field"><span>Propose a different time <small>Pacific Time</small></span><input type="datetime-local" value={proposedStartsAt} onChange={event => setProposedStartsAt(event.target.value)}/></label>
+      {respond.isError && <div className="inline-error" role="alert">Your consultation response could not be saved.</div>}
+      {emailNotice && <div className={respond.data?.notificationSent ? 'consultation-email-success' : 'inline-error'} role="status">{emailNotice}</div>}
+      <div className="consultation-response-actions">
+        <Button onClick={() => submitResponse('confirmed')} disabled={respond.isPending || (consultation.meetingType === 'zoom' && !meetingUrl.trim())}>Confirm &amp; email</Button>
+        <Button variant="outline" onClick={() => submitResponse('reschedule_proposed')} disabled={respond.isPending || !proposedStartsAt}>Propose time</Button>
+        <Button variant="danger" onClick={() => submitResponse('declined')} disabled={respond.isPending}>Decline</Button>
+      </div>
+    </div>
+  </section>;
 }
 
 export function SettingsPage() {
@@ -388,7 +474,7 @@ function AssessmentResult({ result, profile }: { result: PublicLeadResult; profi
     <span className="eyebrow">ASSESSMENT RECEIVED</span>
     <h1>{result.reportTitle || 'A useful first step.'}</h1>
     <p className="result-lead">Thank you for sharing what matters to your business. {result.businessName} now has a clearer picture of where to begin.</p>
-    <div className="result-summary"><span className="eyebrow">YOUR CONSULTING BRIEF</span><p>{result.reportSummary}</p></div>
+    <div className="result-summary"><span className="eyebrow">YOUR CONSULTING BRIEF</span><p>{numberedSummary(result.reportSummary)}</p></div>
     <div className="readiness-row"><span>BRIEF READINESS</span><div className="readiness-meter"><i style={{width:`${result.readinessScore}%`}}/></div><b>{result.readinessScore}<small>/100</small></b></div>
     <p className="score-caption">Based on the detail in your answers—not a technical audit score.</p>
     <div className="result-next"><Sprout size={19}/><span>Your assessment has been submitted and saved for {result.businessName} to review. You can also request a 15-minute consultation below.</span></div>
@@ -472,34 +558,27 @@ function ConsultationRequestForm({
   </section>;
 }
 
-function NeonAuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+function NeonAuthForm() {
   const [, setLocation] = useLocation();
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setNotice(null);
     setIsPending(true);
     try {
-      const result = mode === 'sign-up'
-        ? await authClient.signUp.email({ name: name.trim(), email: email.trim(), password })
-        : await authClient.signIn.email({ email: email.trim(), password });
+      const result = await authClient.signIn.email({ email: email.trim(), password });
       if (result.error) {
         setError(result.error.message ?? 'Authentication failed.');
-      } else if (mode === 'sign-up' && !result.data?.token) {
-        setNotice('Check your email for the next step to finish creating your account.');
       } else {
         const sessionResult = await authClient.getSession();
         if (sessionResult.error) {
           setError(sessionResult.error.message ?? 'Could not load your account session.');
         } else if (!sessionResult.data?.session) {
-          setError('Your account was created, but your session is not ready. Please sign in.');
+          setError('Your session is not ready. Please sign in again.');
         } else {
           setLocation('/dashboard');
         }
@@ -511,63 +590,26 @@ function NeonAuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     }
   }
 
-  async function signInWithGoogle() {
-    setError(null);
-    setNotice(null);
-    setIsPending(true);
-    try {
-      const result = await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: `${window.location.origin}${basePath}/dashboard`,
-      });
-      if (result.error) setError(result.error.message ?? 'Google sign-in failed.');
-    } catch (socialError) {
-      setError(socialError instanceof Error ? socialError.message : 'Google sign-in failed.');
-    } finally {
-      setIsPending(false);
-    }
-  }
-
   return <div className="neon-auth-card">
     <div className="neon-auth-heading">
-      <h2>{mode === 'sign-in' ? 'Welcome back' : 'Set up your Boss Mom workspace'}</h2>
-      <p>{mode === 'sign-in' ? 'Pick up where your client work left off.' : 'A thoughtful start for your client work.'}</p>
+      <h2>Welcome back</h2>
+      <p>Pick up where your client work left off.</p>
     </div>
     {error && <div className="neon-auth-error" role="alert">{error}</div>}
-    {notice && <div className="neon-auth-notice" role="status">{notice}</div>}
     <form className="neon-auth-form" onSubmit={submit}>
-      {mode === 'sign-up' && <label className="neon-auth-field">
-        <span>Name</span>
-        <input autoComplete="name" required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
-      </label>}
       <label className="neon-auth-field">
         <span>Email address</span>
         <input type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} />
       </label>
       <label className="neon-auth-field">
         <span>Password</span>
-        <input type="password" autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={event => setPassword(event.target.value)} />
+        <input type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} />
       </label>
-      <button className="neon-auth-submit" type="submit" disabled={isPending}>
-        {isPending ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : 'Create account'}
-      </button>
+      <button className="neon-auth-submit" type="submit" disabled={isPending}>{isPending ? 'Please wait…' : 'Sign in'}</button>
     </form>
-    <div className="neon-auth-divider"><span>or</span></div>
-    <button className="neon-auth-google" type="button" disabled={isPending} onClick={signInWithGoogle}>
-      <span className="neon-google-mark" aria-hidden="true">G</span>Continue with Google
-    </button>
-    <p className="neon-auth-switch">
-      {mode === 'sign-in' ? 'New to the workspace?' : 'Already have an account?'}{' '}
-      <Link href={mode === 'sign-in' ? '/sign-up' : '/sign-in'}>
-        {mode === 'sign-in' ? 'Create an account' : 'Sign in'}
-      </Link>
-    </p>
   </div>;
 }
 
 export function SignInPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><NeonAuthForm mode="sign-in"/></div></div>;
-}
-export function SignUpPage() {
-  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">A BETTER FIRST CONVERSATION</span><h1>Make space for<br/>better client work.</h1><p>Set up your practice profile and build an intake that asks the right things.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><NeonAuthForm mode="sign-up"/></div></div>;
+  return <div className="auth-page field-grain"><div className="auth-aside"><Link href="/" className="logo-link"><Wordmark inverse/></Link><div className="auth-quote"><span className="eyebrow">YOUR PRACTICE, IN VIEW</span><h1>Keep the good<br/>work moving.</h1><p>A thoughtful place for every prospect, every detail, and every next step.</p></div><span className="auth-aside-footer">BOSS MOM CONSULTING / WORKSPACE</span></div><div className="auth-main"><Link href="/" className="auth-home"><ArrowLeft size={15}/> Back to Boss Mom Consulting</Link><NeonAuthForm/></div></div>;
 }

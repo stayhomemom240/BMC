@@ -121,6 +121,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /leads/{leadId}/consultation:
+    parameters:
+      - name: leadId
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: respondToConsultation
+      tags: [leads]
+      summary: Confirm, decline, or propose a new consultation time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConsultationInput"
+      responses:
+        "200":
+          description: Consultation response saved and email attempt completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationResponse"
+        "404":
+          description: Lead or consultation request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /dashboard/insights:
     get:
       operationId: getLeadInsights
@@ -304,6 +334,10 @@ components:
         notes: { type: ["string", "null"] }
         stage: { $ref: "#/components/schemas/LeadStage" }
         createdAt: { type: string, format: date-time }
+        consultation:
+          anyOf:
+            - $ref: "#/components/schemas/Consultation"
+            - type: "null"
       required:
         - id
         - ownerId
@@ -317,6 +351,44 @@ components:
         - reportSummary
         - stage
         - createdAt
+    ConsultationStatus:
+      type: string
+      enum: [requested, confirmed, declined, reschedule_proposed]
+    Consultation:
+      type: object
+      properties:
+        id: { type: integer }
+        status: { $ref: "#/components/schemas/ConsultationStatus" }
+        slotStart: { type: string, format: date-time }
+        meetingType: { type: string, enum: [zoom, phone] }
+        phone: { type: ["string", "null"] }
+        responseMessage: { type: ["string", "null"] }
+        responseSlotStart: { type: ["string", "null"], format: date-time }
+        meetingUrl: { type: ["string", "null"], format: uri }
+        createdAt: { type: string, format: date-time }
+        respondedAt: { type: ["string", "null"], format: date-time }
+      required:
+        - id
+        - status
+        - slotStart
+        - meetingType
+        - createdAt
+    UpdateConsultationInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [confirmed, declined, reschedule_proposed]
+        responseMessage: { type: ["string", "null"], maxLength: 2000 }
+        proposedStartsAt: { type: ["string", "null"], format: date-time }
+        meetingUrl: { type: ["string", "null"], format: uri, maxLength: 500 }
+      required: [status]
+    ConsultationResponse:
+      type: object
+      properties:
+        consultation: { $ref: "#/components/schemas/Consultation" }
+        notificationSent: { type: boolean }
+      required: [consultation, notificationSent]
     LeadInput:
       type: object
       properties:

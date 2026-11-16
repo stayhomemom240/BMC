@@ -1,4 +1,12 @@
-import { index, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { leadsTable } from "./leads";
 
 export const consultationRequestsTable = pgTable(
@@ -11,6 +19,11 @@ export const consultationRequestsTable = pgTable(
     slotStart: timestamp("slot_start", { withTimezone: true }).notNull(),
     meetingType: text("meeting_type").notNull(),
     phone: text("phone"),
+    status: text("status").notNull().default("requested"),
+    responseMessage: text("response_message"),
+    responseSlotStart: timestamp("response_slot_start", { withTimezone: true }),
+    meetingUrl: text("meeting_url"),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

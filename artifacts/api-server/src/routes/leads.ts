@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   CreateLeadBody,
@@ -14,6 +14,9 @@ import {
   ListLeadsResponse,
   RequestConsultationBody,
   RequestConsultationResponse,
+  RespondToConsultationBody,
+  RespondToConsultationParams,
+  RespondToConsultationResponse,
   SubmitPublicLeadBody,
   SubmitPublicLeadResponse,
   UpdateLeadBody,
@@ -33,6 +36,7 @@ import { logger } from "../lib/logger";
 import { requireNeonAuth } from "../middlewares/neonAuthMiddleware";
 import {
   sendConsultationNotification,
+  sendConsultationResponseNotification,
   sendLeadNotification,
 } from "../services/leadNotifications";
 
@@ -76,7 +80,9 @@ function calculateBriefReadiness(input: {
 function createReportSummary(
   input: {
     name: string;
+    email: string;
     company?: string | null;
+    website?: string | null;
     serviceType: string;
     industry?: string | null;
     goals: string;
@@ -93,17 +99,19 @@ function createReportSummary(
         : "Confirm the desired outcome, project scope, and first milestone before preparing a service proposal.";
 
   return [
-    `Business: ${input.company?.trim() || input.name}`,
+    `Contact: ${input.name} (${input.email})`,
+    `Business: ${input.company?.trim() || "Not provided"}`,
+    `Website: ${input.website?.trim() || "Not provided"}`,
     `Service of interest: ${serviceLabel(input.serviceType)}`,
-    input.industry?.trim() ? `Industry: ${input.industry.trim()}` : null,
-    `Goal shared: ${input.goals.trim()}`,
+    `Industry: ${input.industry?.trim() || "Not provided"}`,
+    `Goal: ${input.goals.trim()}`,
     `Current challenge: ${input.challenge.trim()}`,
     `Timing: ${input.timeline}`,
     `Brief readiness: ${readinessScore}/100 (based on the completeness of these answers, not a technical audit score).`,
     `Suggested next step: ${nextStep}`,
-    "This intake summary reflects the prospect's answers; it is not a completed technical or on-site audit.",
+    "Note: This summary reflects the prospect's answers; it is not a completed technical or on-site audit.",
   ]
-    .filter(Boolean)
+    .map((response, index) => `${index + 1}. ${response}`)
     .join("\n");
 }
 
@@ -150,14 +158,56 @@ function serializeLead<T extends { createdAt: Date }>(lead: T) {
   return { ...lead, createdAt: lead.createdAt.toISOString() };
 }
 
+function serializeConsultation<
+  T extends {
+    slotStart: Date;
+    createdAt: Date;
+    responseSlotStart: Date | null;
+    respondedAt: Date | null;
+  },
+>(consultation: T) {
+  return {
+    ...consultation,
+    slotStart: consultation.slotStart.toISOString(),
+    createdAt: consultation.createdAt.toISOString(),
+    responseSlotStart: consultation.responseSlotStart?.toISOString() ?? null,
+    respondedAt: consultation.respondedAt?.toISOString() ?? null,
+  };
+}
+
+function serializeLeadWithConsultation<
+  T extends { createdAt: Date },
+  C extends {
+    slotStart: Date;
+    createdAt: Date;
+    responseSlotStart: Date | null;
+    respondedAt: Date | null;
+  },
+>(lead: T, consultation: C | null) {
+  return {
+    ...serializeLead(lead),
+    consultation: consultation ? serializeConsultation(consultation) : null,
+  };
+}
+
 router.get("/leads", requireAuth, async (_req, res): Promise<void> => {
   const ownerId = res.locals.ownerId as string;
-  const leads = await db
-    .select()
+  const rows = await db
+    .select({ lead: leadsTable, consultation: consultationRequestsTable })
     .from(leadsTable)
+    .leftJoin(
+      consultationRequestsTable,
+      eq(consultationRequestsTable.leadId, leadsTable.id),
+    )
     .where(eq(leadsTable.ownerId, ownerId))
     .orderBy(desc(leadsTable.createdAt));
-  res.json(ListLeadsResponse.parse(leads.map(serializeLead)));
+  res.json(
+    ListLeadsResponse.parse(
+      rows.map(({ lead, consultation }) =>
+        serializeLeadWithConsultation(lead, consultation),
+      ),
+    ),
+  );
 });
 
 router.post("/leads", requireAuth, async (req, res): Promise<void> => {
@@ -168,7 +218,10 @@ router.post("/leads", requireAuth, async (req, res): Promise<void> => {
   }
 
   const lead = await insertLead(res.locals.ownerId as string, parsed.data);
-  await sendLeadNotification(lead);
+  await sendLeadNotification({
+    ...lead,
+    serviceType: serviceLabel(lead.serviceType),
+  });
   res.status(201).json(CreateLeadResponse.parse(serializeLead(lead)));
 });
 
@@ -179,20 +232,28 @@ router.get("/leads/:leadId", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const [lead] = await db
-    .select()
+  const [row] = await db
+    .select({ lead: leadsTable, consultation: consultationRequestsTable })
     .from(leadsTable)
+    .leftJoin(
+      consultationRequestsTable,
+      eq(consultationRequestsTable.leadId, leadsTable.id),
+    )
     .where(
       and(
         eq(leadsTable.id, params.data.leadId),
         eq(leadsTable.ownerId, res.locals.ownerId as string),
       ),
     );
-  if (!lead) {
+  if (!row) {
     res.status(404).json({ error: "Lead not found." });
     return;
   }
-  res.json(GetLeadResponse.parse(serializeLead(lead)));
+  res.json(
+    GetLeadResponse.parse(
+      serializeLeadWithConsultation(row.lead, row.consultation),
+    ),
+  );
 });
 
 router.patch(
@@ -214,7 +275,7 @@ router.patch(
       return;
     }
 
-    const [lead] = await db
+    const [updatedLead] = await db
       .update(leadsTable)
       .set(parsed.data)
       .where(
@@ -224,11 +285,140 @@ router.patch(
         ),
       )
       .returning();
-    if (!lead) {
+    if (!updatedLead) {
       res.status(404).json({ error: "Lead not found." });
       return;
     }
-    res.json(UpdateLeadResponse.parse(serializeLead(lead)));
+    const [row] = await db
+      .select({ lead: leadsTable, consultation: consultationRequestsTable })
+      .from(leadsTable)
+      .leftJoin(
+        consultationRequestsTable,
+        eq(consultationRequestsTable.leadId, leadsTable.id),
+      )
+      .where(eq(leadsTable.id, updatedLead.id));
+    if (!row) {
+      res.status(404).json({ error: "Lead not found." });
+      return;
+    }
+    res.json(
+      UpdateLeadResponse.parse(
+        serializeLeadWithConsultation(row.lead, row.consultation),
+      ),
+    );
+  },
+);
+
+router.patch(
+  "/leads/:leadId/consultation",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RespondToConsultationParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const parsed = RespondToConsultationBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const [row] = await db
+      .select({ lead: leadsTable, consultation: consultationRequestsTable })
+      .from(leadsTable)
+      .innerJoin(
+        consultationRequestsTable,
+        eq(consultationRequestsTable.leadId, leadsTable.id),
+      )
+      .where(
+        and(
+          eq(leadsTable.id, params.data.leadId),
+          eq(leadsTable.ownerId, res.locals.ownerId as string),
+        ),
+      );
+    if (!row) {
+      res.status(404).json({ error: "Lead or consultation request not found." });
+      return;
+    }
+
+    const meetingType = row.consultation.meetingType;
+    if (meetingType !== "zoom" && meetingType !== "phone") {
+      logger.error(
+        { event: "invalid_consultation_meeting_type" },
+        "A consultation request has an unsupported meeting type.",
+      );
+      res.status(500).json({ error: "Consultation data is invalid." });
+      return;
+    }
+
+    const { status, responseMessage, proposedStartsAt, meetingUrl } =
+      parsed.data;
+    if (status === "reschedule_proposed" && !proposedStartsAt) {
+      res.status(400).json({
+        error: "Choose a proposed time before sending a reschedule offer.",
+      });
+      return;
+    }
+    if (status !== "reschedule_proposed" && proposedStartsAt) {
+      res.status(400).json({
+        error: "A proposed time is only valid for a reschedule offer.",
+      });
+      return;
+    }
+    if (
+      status === "confirmed" &&
+      row.consultation.meetingType === "zoom" &&
+      !meetingUrl
+    ) {
+      res.status(400).json({
+        error: "Add the Zoom link before confirming this consultation.",
+      });
+      return;
+    }
+    if (status !== "confirmed" && meetingUrl) {
+      res.status(400).json({
+        error: "A meeting link can only be sent with a confirmation.",
+      });
+      return;
+    }
+    if (meetingUrl) {
+      const parsedUrl = URL.canParse(meetingUrl) ? new URL(meetingUrl) : null;
+      if (!parsedUrl || !["http:", "https:"].includes(parsedUrl.protocol)) {
+        res.status(400).json({
+          error: "Enter a valid HTTP or HTTPS meeting link.",
+        });
+        return;
+      }
+    }
+
+    const [consultation] = await db
+      .update(consultationRequestsTable)
+      .set({
+        status,
+        responseMessage: responseMessage?.trim() || null,
+        responseSlotStart: proposedStartsAt ?? null,
+        meetingUrl: meetingUrl?.trim() || null,
+        respondedAt: new Date(),
+      })
+      .where(eq(consultationRequestsTable.id, row.consultation.id))
+      .returning();
+    if (!consultation) {
+      res.status(404).json({ error: "Consultation request not found." });
+      return;
+    }
+    const notificationSent = await sendConsultationResponseNotification({
+      lead: row.lead,
+      consultation: { ...consultation, status, meetingType },
+    });
+
+    res.json(
+      RespondToConsultationResponse.parse({
+        consultation: serializeConsultation(consultation),
+        notificationSent,
+      }),
+    );
   },
 );
 
@@ -341,7 +531,16 @@ router.get("/public/website-profile", async (_req, res): Promise<void> => {
   const [settings] = await db
     .select()
     .from(leadSettingsTable)
-    .where(eq(leadSettingsTable.publishOnWebsite, true))
+    .where(
+      and(
+        eq(leadSettingsTable.publishOnWebsite, true),
+        sql`EXISTS (
+          SELECT 1
+          FROM neon_auth."user" AS auth_user
+          WHERE auth_user.id::text = ${leadSettingsTable.ownerId}
+        )`,
+      ),
+    )
     .orderBy(desc(leadSettingsTable.updatedAt))
     .limit(1);
   if (!settings) {
@@ -371,7 +570,16 @@ router.get(
     const [settings] = await db
       .select()
       .from(leadSettingsTable)
-      .where(eq(leadSettingsTable.ownerId, params.data.ownerId));
+      .where(
+        and(
+          eq(leadSettingsTable.ownerId, params.data.ownerId),
+          sql`EXISTS (
+            SELECT 1
+            FROM neon_auth."user" AS auth_user
+            WHERE auth_user.id::text = ${leadSettingsTable.ownerId}
+          )`,
+        ),
+      );
     if (!settings) {
       res.status(404).json({ error: "This assessment link is not available." });
       return;
@@ -401,7 +609,16 @@ router.post("/public/leads", async (req, res): Promise<void> => {
       enabledServices: leadSettingsTable.enabledServices,
     })
     .from(leadSettingsTable)
-    .where(eq(leadSettingsTable.ownerId, input.ownerId));
+    .where(
+      and(
+        eq(leadSettingsTable.ownerId, input.ownerId),
+        sql`EXISTS (
+          SELECT 1
+          FROM neon_auth."user" AS auth_user
+          WHERE auth_user.id::text = ${leadSettingsTable.ownerId}
+        )`,
+      ),
+    );
   if (!settings) {
     res.status(404).json({ error: "This assessment link is not available." });
     return;
@@ -412,7 +629,10 @@ router.post("/public/leads", async (req, res): Promise<void> => {
   }
 
   const lead = await insertLead(input.ownerId, input);
-  await sendLeadNotification(lead);
+  await sendLeadNotification({
+    ...lead,
+    serviceType: serviceLabel(lead.serviceType),
+  });
   const result = {
     id: lead.id,
     bookingToken: lead.publicBookingToken,
@@ -482,6 +702,11 @@ router.post("/public/consultation-requests", async (req, res): Promise<void> => 
         slotStart,
         meetingType: input.meetingType,
         phone: input.meetingType === "phone" ? phone : null,
+        status: "requested",
+        responseMessage: null,
+        responseSlotStart: null,
+        meetingUrl: null,
+        respondedAt: null,
         createdAt: new Date(),
       },
     })

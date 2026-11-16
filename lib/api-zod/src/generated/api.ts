@@ -41,7 +41,19 @@ export const ListLeadsResponseItem = zod.object({
   "reportSummary": zod.string(),
   "notes": zod.string().nullish(),
   "stage": zod.enum(['new', 'contacted', 'proposal', 'won', 'lost']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "consultation": zod.union([zod.object({
+  "id": zod.number().int(),
+  "status": zod.enum(['requested', 'confirmed', 'declined', 'reschedule_proposed']),
+  "slotStart": zod.coerce.date(),
+  "meetingType": zod.enum(['zoom', 'phone']),
+  "phone": zod.string().nullish(),
+  "responseMessage": zod.string().nullish(),
+  "responseSlotStart": zod.coerce.date().nullish(),
+  "meetingUrl": zod.string().url().nullish(),
+  "createdAt": zod.coerce.date(),
+  "respondedAt": zod.coerce.date().nullish()
+}),zod.null()]).optional()
 })
 export const ListLeadsResponse = zod.array(ListLeadsResponseItem)
 
@@ -103,7 +115,19 @@ export const CreateLeadResponse = zod.object({
   "reportSummary": zod.string(),
   "notes": zod.string().nullish(),
   "stage": zod.enum(['new', 'contacted', 'proposal', 'won', 'lost']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "consultation": zod.union([zod.object({
+  "id": zod.number().int(),
+  "status": zod.enum(['requested', 'confirmed', 'declined', 'reschedule_proposed']),
+  "slotStart": zod.coerce.date(),
+  "meetingType": zod.enum(['zoom', 'phone']),
+  "phone": zod.string().nullish(),
+  "responseMessage": zod.string().nullish(),
+  "responseSlotStart": zod.coerce.date().nullish(),
+  "meetingUrl": zod.string().url().nullish(),
+  "createdAt": zod.coerce.date(),
+  "respondedAt": zod.coerce.date().nullish()
+}),zod.null()]).optional()
 })
 
 
@@ -135,7 +159,19 @@ export const GetLeadResponse = zod.object({
   "reportSummary": zod.string(),
   "notes": zod.string().nullish(),
   "stage": zod.enum(['new', 'contacted', 'proposal', 'won', 'lost']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "consultation": zod.union([zod.object({
+  "id": zod.number().int(),
+  "status": zod.enum(['requested', 'confirmed', 'declined', 'reschedule_proposed']),
+  "slotStart": zod.coerce.date(),
+  "meetingType": zod.enum(['zoom', 'phone']),
+  "phone": zod.string().nullish(),
+  "responseMessage": zod.string().nullish(),
+  "responseSlotStart": zod.coerce.date().nullish(),
+  "meetingUrl": zod.string().url().nullish(),
+  "createdAt": zod.coerce.date(),
+  "respondedAt": zod.coerce.date().nullish()
+}),zod.null()]).optional()
 })
 
 
@@ -176,7 +212,19 @@ export const UpdateLeadResponse = zod.object({
   "reportSummary": zod.string(),
   "notes": zod.string().nullish(),
   "stage": zod.enum(['new', 'contacted', 'proposal', 'won', 'lost']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "consultation": zod.union([zod.object({
+  "id": zod.number().int(),
+  "status": zod.enum(['requested', 'confirmed', 'declined', 'reschedule_proposed']),
+  "slotStart": zod.coerce.date(),
+  "meetingType": zod.enum(['zoom', 'phone']),
+  "phone": zod.string().nullish(),
+  "responseMessage": zod.string().nullish(),
+  "responseSlotStart": zod.coerce.date().nullish(),
+  "meetingUrl": zod.string().url().nullish(),
+  "createdAt": zod.coerce.date(),
+  "respondedAt": zod.coerce.date().nullish()
+}),zod.null()]).optional()
 })
 
 
@@ -188,6 +236,43 @@ export const DeleteLeadParams = zod.object({
 })
 
 export const DeleteLeadResponse = zod.void()
+
+
+/**
+ * @summary Confirm, decline, or propose a new consultation time
+ */
+export const RespondToConsultationParams = zod.object({
+  "leadId": zod.coerce.number().int()
+})
+
+export const respondToConsultationBodyResponseMessageMax = 2000;
+
+export const respondToConsultationBodyMeetingUrlMax = 500;
+
+
+
+export const RespondToConsultationBody = zod.object({
+  "status": zod.enum(['confirmed', 'declined', 'reschedule_proposed']),
+  "responseMessage": zod.string().max(respondToConsultationBodyResponseMessageMax).nullish(),
+  "proposedStartsAt": zod.coerce.date().nullish(),
+  "meetingUrl": zod.string().url().max(respondToConsultationBodyMeetingUrlMax).nullish()
+})
+
+export const RespondToConsultationResponse = zod.object({
+  "consultation": zod.object({
+  "id": zod.number().int(),
+  "status": zod.enum(['requested', 'confirmed', 'declined', 'reschedule_proposed']),
+  "slotStart": zod.coerce.date(),
+  "meetingType": zod.enum(['zoom', 'phone']),
+  "phone": zod.string().nullish(),
+  "responseMessage": zod.string().nullish(),
+  "responseSlotStart": zod.coerce.date().nullish(),
+  "meetingUrl": zod.string().url().nullish(),
+  "createdAt": zod.coerce.date(),
+  "respondedAt": zod.coerce.date().nullish()
+}),
+  "notificationSent": zod.boolean()
+})
 
 
 /**

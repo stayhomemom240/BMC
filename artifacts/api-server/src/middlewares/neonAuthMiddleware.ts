@@ -1,5 +1,7 @@
+import { eq } from "drizzle-orm";
 import { createRemoteJWKSet, errors, jwtVerify } from "jose";
 import type { RequestHandler } from "express";
+import { db, leadSettingsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 
 const authBaseUrl = process.env.NEON_AUTH_BASE_URL;
@@ -50,6 +52,20 @@ export const requireNeonAuth: RequestHandler = async (req, res, next) => {
       "Could not verify a Neon Auth token",
     );
     res.status(503).json({ error: "Authentication service is unavailable." });
+    return;
+  }
+
+  const [ownerSettings] = await db
+    .select({ ownerId: leadSettingsTable.ownerId })
+    .from(leadSettingsTable)
+    .where(eq(leadSettingsTable.ownerId, ownerId))
+    .limit(1);
+  if (!ownerSettings) {
+    logger.warn(
+      { event: "non_owner_access_rejected" },
+      "Rejected an authenticated account without an owner profile.",
+    );
+    res.status(403).json({ error: "Owner access is required." });
     return;
   }
 

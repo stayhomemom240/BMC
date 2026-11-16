@@ -27,6 +27,7 @@ import type {
 import type {
   ConsultationRequestInput,
   ConsultationRequestResult,
+  ConsultationResponse,
   ErrorEnvelope,
   HealthStatus,
   Lead,
@@ -37,7 +38,8 @@ import type {
   LeadUpdate,
   PublicLeadInput,
   PublicLeadResult,
-  PublicLeadSettings
+  PublicLeadSettings,
+  UpdateConsultationInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -620,6 +622,95 @@ export const useDeleteLead = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getDeleteLeadMutationOptions(options), queryClient);
+    }
+
+export const getRespondToConsultationUrl = (leadId: number,) => {
+
+
+
+
+  return `/api/leads/${leadId}/consultation`
+}
+
+/**
+ * @summary Confirm, decline, or propose a new consultation time
+ */
+export const respondToConsultation = async (leadId: number,
+    updateConsultationInput: UpdateConsultationInput, options?: Parameters<typeof customFetch>[1]): Promise<ConsultationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsultationResponse>(getRespondToConsultationUrl(leadId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateConsultationInput)
+  }
+);}
+
+
+
+
+
+export const getRespondToConsultationMutationKey = () => ['respondToConsultation'] as const;
+
+export const getRespondToConsultationMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToConsultation>>, TError,RespondToConsultationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondToConsultation>>, TError,RespondToConsultationMutationVariables, TContext> => {
+
+const mutationKey = getRespondToConsultationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToConsultation>>, RespondToConsultationMutationVariables> = (props) => {
+          const {leadId,data} = props ?? {};
+
+          return  respondToConsultation(leadId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RespondToConsultationMutationResult = NonNullable<Awaited<ReturnType<typeof respondToConsultation>>>
+    export type RespondToConsultationMutationBody = BodyType<UpdateConsultationInput>
+    export type RespondToConsultationMutationError = ErrorType<ErrorEnvelope>
+    export type RespondToConsultationMutationVariables = {leadId: number;data: BodyType<UpdateConsultationInput>}
+
+    /**
+ * @summary Confirm, decline, or propose a new consultation time
+ */
+export const useRespondToConsultation = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToConsultation>>, TError,RespondToConsultationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof respondToConsultation>>,
+        TError,
+        RespondToConsultationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRespondToConsultationMutationOptions(options), queryClient);
     }
 
 export const getGetLeadInsightsUrl = () => {

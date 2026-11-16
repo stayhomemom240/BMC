@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { Consultation } from './consultation';
 import type { LeadStage } from './leadStage';
 import type { ServiceType } from './serviceType';
 
@@ -33,4 +34,5 @@ export interface Lead {
   notes?: string | null;
   stage: LeadStage;
   createdAt: Date;
+  consultation?: Consultation | null;
 }

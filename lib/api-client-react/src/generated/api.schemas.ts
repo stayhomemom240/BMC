@@ -33,6 +33,42 @@ export const LeadStage = {
   lost: 'lost',
 } as const;
 
+export type ConsultationStatus = typeof ConsultationStatus[keyof typeof ConsultationStatus];
+
+
+export const ConsultationStatus = {
+  requested: 'requested',
+  confirmed: 'confirmed',
+  declined: 'declined',
+  reschedule_proposed: 'reschedule_proposed',
+} as const;
+
+export type ConsultationMeetingType = typeof ConsultationMeetingType[keyof typeof ConsultationMeetingType];
+
+
+export const ConsultationMeetingType = {
+  zoom: 'zoom',
+  phone: 'phone',
+} as const;
+
+export interface Consultation {
+  id: number;
+  status: ConsultationStatus;
+  slotStart: string;
+  meetingType: ConsultationMeetingType;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  responseMessage?: string | null;
+  /** @nullable */
+  responseSlotStart?: string | null;
+  /** @nullable */
+  meetingUrl?: string | null;
+  createdAt: string;
+  /** @nullable */
+  respondedAt?: string | null;
+}
+
 export interface Lead {
   id: number;
   ownerId: string;
@@ -58,6 +94,37 @@ export interface Lead {
   notes?: string | null;
   stage: LeadStage;
   createdAt: string;
+  consultation?: Consultation | null;
+}
+
+export type UpdateConsultationInputStatus = typeof UpdateConsultationInputStatus[keyof typeof UpdateConsultationInputStatus];
+
+
+export const UpdateConsultationInputStatus = {
+  confirmed: 'confirmed',
+  declined: 'declined',
+  reschedule_proposed: 'reschedule_proposed',
+} as const;
+
+export interface UpdateConsultationInput {
+  status: UpdateConsultationInputStatus;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  responseMessage?: string | null;
+  /** @nullable */
+  proposedStartsAt?: string | null;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  meetingUrl?: string | null;
+}
+
+export interface ConsultationResponse {
+  consultation: Consultation;
+  notificationSent: boolean;
 }
 
 export interface LeadInput {
