@@ -125,14 +125,23 @@ function OfferMark({ type, compact = false }: { type: ServiceType; compact?: boo
   const Icon = type === 'local-seo' ? MapPin : type === 'zero-waste' ? Leaf : Target;
   return <span className={cx('offer-mark', `offer-${type}`)}><Icon size={compact ? 14 : 17}/>{!compact && offerLabels[type]}</span>;
 }
+function getLeadDisplayName(lead: Pick<Lead, 'name' | 'email'>) {
+  return typeof lead.name === 'string' && lead.name.trim()
+    ? lead.name.trim()
+    : typeof lead.email === 'string' && lead.email.trim()
+      ? lead.email.trim()
+      : 'Name unavailable';
+}
 function LeadRow({ lead }: { lead: Lead }) {
   const consultation = lead.consultation;
   const callTime = consultation?.status === 'reschedule_proposed' && consultation.responseSlotStart
     ? consultation.responseSlotStart
     : consultation?.slotStart;
+  const displayName = getLeadDisplayName(lead);
+  const hasName = typeof lead.name === 'string' && !!lead.name.trim();
   return <Link href={`/leads/${lead.id}`} className="lead-row" data-testid={`link-lead-${lead.id}`}>
-    <span className="lead-avatar">{lead.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</span>
-    <span className="lead-person"><b>{lead.name}</b><small>{lead.company || lead.email}</small>{consultation && callTime && <small className="lead-call-state">Call {consultation.status.replaceAll('_', ' ')} · {dateLabel(callTime)}</small>}</span>
+    <span className="lead-avatar">{displayName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</span>
+    <span className="lead-person"><b>{displayName}</b><small>{lead.company || lead.email}</small>{!hasName && <small className="lead-data-warning" role="status">Name missing from this record</small>}{consultation && callTime && <small className="lead-call-state">Call {consultation.status.replaceAll('_', ' ')} · {dateLabel(callTime)}</small>}</span>
     <span className="lead-offer"><OfferMark type={lead.serviceType} compact/><span>{offerLabels[lead.serviceType]}</span></span>
     <StagePill stage={lead.stage}/><span className="lead-date">{dateLabel(lead.createdAt)}</span><ArrowRight size={16} className="row-arrow"/>
   </Link>;
@@ -225,7 +234,7 @@ export function LeadsPage() {
   const [draft, setDraft] = useState({ name: '', email: '', serviceType: 'general' as ServiceType });
   const filtered = useMemo(() => (leadsQuery.data || []).filter(lead => {
     const term = search.toLowerCase();
-    const matches = `${lead.name} ${lead.email} ${lead.company || ''}`.toLowerCase().includes(term);
+    const matches = `${getLeadDisplayName(lead)} ${lead.email} ${lead.company || ''}`.toLowerCase().includes(term);
     return matches && (stageFilter === 'all' || lead.stage === stageFilter);
   }).sort((a,b)=>+new Date(b.createdAt)-+new Date(a.createdAt)), [leadsQuery.data, search, stageFilter]);
   function handleCreate(event: FormEvent) {
@@ -273,16 +282,18 @@ export function LeadDetailPage({ id }: { id?: string }) {
   };
   if (leadQuery.isLoading) return <AppShell active="/leads"><div className="page-content"><LoadingPanel label="Opening the field report"/></div></AppShell>;
   if (leadQuery.isError || !lead) return <AppShell active="/leads"><div className="page-content"><Link href="/leads" className="back-link"><ArrowLeft size={15}/> Back to lead book</Link><ErrorPanel retry={()=>leadQuery.refetch()} message="This conversation may have moved or could not be opened."/></div></AppShell>;
+  const displayName = getLeadDisplayName(lead);
+  const hasName = typeof lead.name === 'string' && !!lead.name.trim();
   return <AppShell active="/leads"><div className="page-content detail-page">
     <Link href="/leads" className="back-link"><ArrowLeft size={15}/> Back to lead book</Link>
-     <section className="detail-cover"><div className="detail-heading"><span className="lead-avatar lead-avatar-large">{lead.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</span><div><span className="eyebrow">CLIENT BRIEF / {String(lead.id).padStart(4,'0')}</span><h1>{lead.name}</h1><div className="detail-meta"><span>{lead.company || lead.email}</span><span className="meta-divider">/</span><OfferMark type={lead.serviceType}/></div></div><div className="detail-actions"><Button variant="danger" onClick={remove} disabled={deleteLead.isPending}><Trash2 size={15}/>{deleteLead.isPending ? 'Deleting…' : 'Delete lead'}</Button></div></div>
+     <section className="detail-cover"><div className="detail-heading"><span className="lead-avatar lead-avatar-large">{displayName.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</span><div><span className="eyebrow">CLIENT BRIEF / {String(lead.id).padStart(4,'0')}</span><h1>{displayName}</h1>{!hasName && <small className="lead-data-warning" role="status">Name missing from this record</small>}<div className="detail-meta"><span>{lead.company || lead.email}</span><span className="meta-divider">/</span><OfferMark type={lead.serviceType}/></div></div><div className="detail-actions"><Button variant="danger" onClick={remove} disabled={deleteLead.isPending}><Trash2 size={15}/>{deleteLead.isPending ? 'Deleting…' : 'Delete lead'}</Button></div></div>
       <div className="detail-bottom"><div><span className="eyebrow">ARRIVED</span><b>{dateLabel(lead.createdAt)}</b></div><div><span className="eyebrow">READINESS</span><b>{lead.readinessScore}<small> / 100</small></b></div><div><span className="eyebrow">TIMELINE</span><b>{lead.timeline}</b></div><div><span className="eyebrow">CURRENT STAGE</span><StagePill stage={lead.stage}/></div></div>
     </section>
     {deleteLead.isError && <div className="inline-error">This lead could not be deleted. Please try again.</div>}
     <div className="detail-columns"><div className="detail-main">
       <section className="paper-panel report-panel"><div className="panel-heading"><div><span className="eyebrow">THE CLIENT’S OWN WORDS</span><h2>What they’re working toward</h2></div><FileText size={19}/></div><div className="report-text">{numberedSummary(lead.reportSummary || 'No report summary was included with this assessment.')}</div>
         <div className="report-prompt"><div><span className="eyebrow">THE GOAL</span><p>{lead.goals}</p></div><div><span className="eyebrow">THE CHALLENGE</span><p>{lead.challenge}</p></div></div>
-        <div className="report-contact"><span><UserRound size={15}/>{lead.name}</span><a href={`mailto:${lead.email}`}>{lead.email} <ExternalLink size={13}/></a>{lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noreferrer"><Globe2 size={14}/>Website</a>}</div>
+        <div className="report-contact"><span><UserRound size={15}/>{displayName}</span><a href={`mailto:${lead.email}`}>{lead.email} <ExternalLink size={13}/></a>{lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noreferrer"><Globe2 size={14}/>Website</a>}</div>
       </section>
        {lead.consultation && <ConsultationFollowup lead={lead} consultation={lead.consultation}/>}
        <section className="paper-panel notes-panel"><div className="panel-heading"><div><span className="eyebrow">PRIVATE TO YOUR PRACTICE</span><h2>Working notes</h2></div><MessageSquareText size={19}/></div><textarea value={notesValue} onChange={e=>setNotes(e.target.value)} placeholder="Capture context, questions to ask, or a next step…" rows={5} data-testid="textarea-lead-notes"/><div className="notes-bottom"><small>Only visible in your workspace.</small><Button onClick={()=>update({notes:notesValue})} disabled={updateLead.isPending}>{updateLead.isPending ? 'Saving…' : 'Save notes'}</Button></div>{updateLead.isError && <div className="inline-error">Notes could not be saved.</div>}</section>
@@ -346,8 +357,8 @@ function ConsultationFollowup({
       {consultation.meetingUrl && <a href={consultation.meetingUrl} target="_blank" rel="noreferrer"><span>MEETING LINK</span><b>Open Zoom link <ExternalLink size={13}/></b></a>}
     </div>
     {consultation.responseMessage && <p className="consultation-response-message">{consultation.responseMessage}</p>}
-    <a className="consultation-email-link" href={`mailto:${lead.email}?subject=${encodeURIComponent(`Consultation follow-up for ${lead.name}`)}`}>
-      Email {lead.name} <ArrowRight size={14}/>
+    <a className="consultation-email-link" href={`mailto:${lead.email}?subject=${encodeURIComponent(`Consultation follow-up for ${getLeadDisplayName(lead)}`)}`}>
+      Email {getLeadDisplayName(lead)} <ArrowRight size={14}/>
     </a>
     <div className="consultation-response-form">
       <label className="form-field"><span>Your message <small>Optional</small></span><textarea rows={3} maxLength={2000} value={responseMessage} onChange={event => setResponseMessage(event.target.value)} placeholder="Add a personal note for the email…"/></label>
