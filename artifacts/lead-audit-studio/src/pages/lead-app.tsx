@@ -193,7 +193,8 @@ export function DashboardPage() {
   const leads = useListLeads();
   const health = useHealthCheck();
   const data = insights.data as LeadInsights | undefined;
-  const recent = [...(leads.data || [])].sort((a,b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0,5);
+  const hasUnexpectedLeadResponse = leads.data !== undefined && !Array.isArray(leads.data);
+  const recent = [...(Array.isArray(leads.data) ? leads.data : [])].sort((a,b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0,5);
   return <AppShell active="/dashboard"><div className="page-content">
     <div className="dashboard-topline"><span className="eyebrow"><span className="status-dot"/>BOSS MOM CONSULTING / OVERVIEW</span><span className="health-label"><span className={cx('health-dot', health.isError && 'health-bad')}/>{health.isError ? 'Connection needs attention' : 'Workspace ready'}</span></div>
     <SectionHeading eyebrow="The overview" title="A good day to follow up." detail="A clear read on the conversations in your care.">
@@ -208,7 +209,7 @@ export function DashboardPage() {
     </div>}
     <div className="dashboard-lower">
       <section className="paper-panel recent-panel"><div className="panel-heading"><div><span className="eyebrow">The latest</span><h2>Recent conversations</h2></div><Link className="text-link" href="/leads">Open lead book <ArrowRight size={14}/></Link></div>
-        {leads.isLoading ? <div className="list-skeletons">{[1,2,3].map(x=><div className="skeleton skeleton-row" key={x}/>)}</div> : leads.isError ? <ErrorPanel retry={() => leads.refetch()} message="Recent leads could not be loaded."/> : recent.length === 0 ? <EmptyPanel title="Your next conversation starts here" detail="Share your intake link and your first lead will appear here." action={<Link className="btn btn-outline" href="/settings">Set up your intake link <ArrowRight size={15}/></Link>}/> : <div className="lead-list">{recent.map(lead=><LeadRow key={lead.id} lead={lead}/>)}</div>}
+        {leads.isLoading ? <div className="list-skeletons">{[1,2,3].map(x=><div className="skeleton skeleton-row" key={x}/>)}</div> : leads.isError ? <ErrorPanel retry={() => leads.refetch()} message="Recent leads could not be loaded."/> : hasUnexpectedLeadResponse ? <ErrorPanel retry={() => leads.refetch()} message="The API returned an unexpected response. Check the Cloudflare Pages API proxy configuration."/> : recent.length === 0 ? <EmptyPanel title="Your next conversation starts here" detail="Share your intake link and your first lead will appear here." action={<Link className="btn btn-outline" href="/settings">Set up your intake link <ArrowRight size={15}/></Link>}/> : <div className="lead-list">{recent.map(lead=><LeadRow key={lead.id} lead={lead}/>)}</div>}
       </section>
       <section className="insight-panel"><span className="eyebrow">A small signal</span><h2>What’s coming<br/>through the door</h2><p>Assessments by service, to help you see what clients are asking for.</p>
         {insights.isLoading ? <div className="skeleton skeleton-chart"/> : insights.isError ? <button className="mini-retry" onClick={() => insights.refetch()}>Retry insights</button> : data?.serviceBreakdown?.length ? <ServiceBreakdown data={data.serviceBreakdown}/> : <div className="chart-empty"><span>No pattern yet</span><small>Your first client assessment will start the picture.</small></div>}
@@ -232,7 +233,8 @@ export function LeadsPage() {
   const [stageFilter, setStageFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [draft, setDraft] = useState({ name: '', email: '', serviceType: 'general' as ServiceType });
-  const filtered = useMemo(() => (leadsQuery.data || []).filter(lead => {
+  const hasUnexpectedLeadResponse = leadsQuery.data !== undefined && !Array.isArray(leadsQuery.data);
+  const filtered = useMemo(() => (Array.isArray(leadsQuery.data) ? leadsQuery.data : []).filter(lead => {
     const term = search.toLowerCase();
     const matches = `${getLeadDisplayName(lead)} ${lead.email} ${lead.company || ''}`.toLowerCase().includes(term);
     return matches && (stageFilter === 'all' || lead.stage === stageFilter);
@@ -254,6 +256,7 @@ export function LeadsPage() {
       <div className="table-head"><span>NAME / BUSINESS</span><span>ASSESSMENT</span><span>STAGE</span><span>ADDED</span><span/></div>
       {leadsQuery.isLoading ? <div className="list-skeletons">{[1,2,3,4].map(x=><div className="skeleton skeleton-row" key={x}/>)}</div> :
        leadsQuery.isError ? <ErrorPanel retry={()=>leadsQuery.refetch()} message="Your lead book could not be loaded."/> :
+       hasUnexpectedLeadResponse ? <ErrorPanel retry={()=>leadsQuery.refetch()} message="The API returned an unexpected response. Check the Cloudflare Pages API proxy configuration."/> :
        filtered.length === 0 ? <EmptyPanel title={search || stageFilter !== 'all' ? 'No matching conversations' : 'Your lead book is ready'} detail={search || stageFilter !== 'all' ? 'Try another name or clear your filters.' : 'As prospects complete an assessment, they will be collected here.'} action={search || stageFilter !== 'all' ? <Button variant="outline" onClick={()=>{setSearch('');setStageFilter('all')}}>Clear filters</Button> : <Button onClick={()=>setShowCreate(true)}><Plus size={15}/> Add your first lead</Button>}/> :
        <div className="lead-list">{filtered.map(lead=><LeadRow key={lead.id} lead={lead}/>)}</div>}
     </section>
