@@ -2,7 +2,7 @@
   "name": "bmc",
   "compatibility_date": "2026-11-14",
   "assets": {
-    "directory": "./artifacts/lead-audit-studio/dist/public",
+    "directory": "./dist/public",
     "not_found_handling": "single-page-application"
   },
   "vars": {
