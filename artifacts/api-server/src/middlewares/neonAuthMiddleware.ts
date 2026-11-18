@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { createRemoteJWKSet, errors, jwtVerify } from "jose";
 import type { RequestHandler } from "express";
 import { db, leadSettingsTable } from "@workspace/db";
@@ -55,19 +54,10 @@ export const requireNeonAuth: RequestHandler = async (req, res, next) => {
     return;
   }
 
-  const [ownerSettings] = await db
-    .select({ ownerId: leadSettingsTable.ownerId })
-    .from(leadSettingsTable)
-    .where(eq(leadSettingsTable.ownerId, ownerId))
-    .limit(1);
-  if (!ownerSettings) {
-    logger.warn(
-      { event: "non_owner_access_rejected" },
-      "Rejected an authenticated account without an owner profile.",
-    );
-    res.status(403).json({ error: "Owner access is required." });
-    return;
-  }
+  await db
+    .insert(leadSettingsTable)
+    .values({ ownerId })
+    .onConflictDoNothing({ target: leadSettingsTable.ownerId });
 
   res.locals.ownerId = ownerId;
   next();
