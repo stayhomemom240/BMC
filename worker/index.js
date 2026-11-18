@@ -18,7 +18,11 @@ export default {
     // Express API on Render.
     if (url.pathname.startsWith("/api/")) {
       const target = new URL(url.pathname + url.search, env.API_ORIGIN);
-      return fetch(new Request(target, request));
+      const upstreamRequest = new Request(target, request);
+      const headers = new Headers(upstreamRequest.headers);
+      headers.set("x-forwarded-host", url.host);
+      headers.set("x-forwarded-proto", url.protocol.slice(0, -1));
+      return fetch(new Request(upstreamRequest, { headers }));
     }
 
     // Everything else: the built frontend.

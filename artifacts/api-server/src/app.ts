@@ -73,7 +73,7 @@ const requireSameOriginWrites: RequestHandler = (req, res, next) => {
   }
 
   const origin = req.get("origin");
-  const host = req.get("host");
+  const host = req.get("x-forwarded-host") ?? req.get("host");
   if (!origin || !host) {
     res.status(403).json({ error: "A same-origin request is required." });
     return;
@@ -87,8 +87,8 @@ const requireSameOriginWrites: RequestHandler = (req, res, next) => {
     return;
   }
 
-  const expectedOrigin =
-    configuredAppOrigin ?? `${req.protocol}://${host}`;
+  const forwardedOrigin = `${req.protocol}://${host}`;
+  const expectedOrigin = configuredAppOrigin ?? forwardedOrigin;
   if (parsedOrigin !== expectedOrigin) {
     logger.warn(
       { event: "cross_origin_write_rejected", method: req.method, path: req.path },
@@ -126,9 +126,45 @@ const apiErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     return;
   }
 
+  const databaseErrorCode =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    /^[0-9A-Z]{5}$/.test(error.code)
+      ? error.code
+      : undefined;
+  const validationIssues =
+    typeof error === "object" &&
+    error !== null &&
+    "issues" in error &&
+    Array.isArray(error.issues)
+      ? error.issues.map((issue: unknown) => {
+          if (typeof issue !== "object" || issue === null) {
+            return { code: "unknown", path: "" };
+          }
+          const code =
+            "code" in issue && typeof issue.code === "string"
+              ? issue.code
+              : "unknown";
+          const path =
+            "path" in issue && Array.isArray(issue.path)
+              ? issue.path
+                  .filter(
+                    (part: unknown): part is string | number =>
+                      typeof part === "string" || typeof part === "number",
+                  )
+                  .join(".")
+              : "";
+          return { code, path };
+        })
+      : undefined;
+
   logger.error(
     {
       errorType: error instanceof Error ? error.name : "UnknownError",
+      databaseErrorCode,
+      validationIssues,
       method: req.method,
       path: req.path,
     },

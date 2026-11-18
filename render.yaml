@@ -11,7 +11,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: APP_ORIGIN
-        sync: false
+        value: https://bossmomconsulting.com
       - key: NEON_AUTH_BASE_URL
         sync: false
       - key: NEON_AUTH_JWKS_URL
