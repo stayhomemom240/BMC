@@ -10,6 +10,13 @@
   },
   "vars": {
     "API_ORIGIN": "https://bmc-f58f.onrender.com",
-    "NEON_AUTH_BASE_URL": "PASTE_NEON_AUTH_BASE_URL_HERE"
+    "NEON_AUTH_BASE_URL": "process.env.NEON_AUTH_BASE_URL",
+    "NEON_AUTH_CLIENT_ID": "process.env.NEON_AUTH_CLIENT_ID",
+    "NEON_AUTH_CLIENT_SECRET": "process.env.NEON_AUTH_CLIENT_SECRET",
+    "NEON_AUTH_REDIRECT_URI": "process.env.NEON_AUTH_REDIRECT_URI",
+    "NEON_AUTH_SCOPES": "process.env.NEON_AUTH_SCOPES",
+    "NEON_AUTH_TOKEN_URL": "process.env.NEON_AUTH_TOKEN_URL",
+    "NEON_AUTH_USERINFO_URL": "process.env.NEON_AUTH_USERINFO_URL",
+    "NEON_AUTH_LOGOUT_URL": "process.env.NEON_AUTH_LOGOUT_URL"
   }
 }
