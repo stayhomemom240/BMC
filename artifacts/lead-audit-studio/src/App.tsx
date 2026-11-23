@@ -5,14 +5,21 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
-import { setAuthTokenGetter } from '@workspace/api-client-react';
+import { ApiError, setAuthTokenGetter } from '@workspace/api-client-react';
 import { authClient, getAuthToken } from '@/lib/auth';
 import {
   DashboardPage, ForgotPasswordPage, HomePage, IntakePage, LeadDetailPage,
   LeadsPage, ResetPasswordPage, SettingsPage, SignInPage,
 } from '@/pages/lead-app';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) =>
+        !(error instanceof ApiError && error.status === 429) && failureCount < 3,
+    },
+  },
+});
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 setAuthTokenGetter(async () => {
