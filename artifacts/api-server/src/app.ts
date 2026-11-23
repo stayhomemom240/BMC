@@ -126,13 +126,15 @@ const apiErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     return;
   }
 
+  // Drizzle stores the driver error in cause. Log only the SQLSTATE.
+  const databaseError = error instanceof Error ? (error.cause ?? error) : error;
   const databaseErrorCode =
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string" &&
-    /^[0-9A-Z]{5}$/.test(error.code)
-      ? error.code
+    typeof databaseError === "object" &&
+    databaseError !== null &&
+    "code" in databaseError &&
+    typeof databaseError.code === "string" &&
+    /^[0-9A-Z]{5}$/.test(databaseError.code)
+      ? databaseError.code
       : undefined;
   const validationIssues =
     typeof error === "object" &&
