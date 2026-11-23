@@ -6,17 +6,12 @@
     "directory": "./artifacts/lead-audit-studio/dist/public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*"
+    ]
   },
   "vars": {
     "API_ORIGIN": "https://bmc-f58f.onrender.com",
-    "NEON_AUTH_BASE_URL": "process.env.NEON_AUTH_BASE_URL",
-    "NEON_AUTH_CLIENT_ID": "process.env.NEON_AUTH_CLIENT_ID",
-    "NEON_AUTH_CLIENT_SECRET": "process.env.NEON_AUTH_CLIENT_SECRET",
-    "NEON_AUTH_REDIRECT_URI": "process.env.NEON_AUTH_REDIRECT_URI",
-    "NEON_AUTH_SCOPES": "process.env.NEON_AUTH_SCOPES",
-    "NEON_AUTH_TOKEN_URL": "process.env.NEON_AUTH_TOKEN_URL",
-    "NEON_AUTH_USERINFO_URL": "process.env.NEON_AUTH_USERINFO_URL",
-    "NEON_AUTH_LOGOUT_URL": "process.env.NEON_AUTH_LOGOUT_URL"
+    "NEON_AUTH_BASE_URL": "https://ep-holy-sunset-be7hgcw4.neonauth.c-9.us-east-2.aws.neon.tech/neondb/auth"
   }
 }
