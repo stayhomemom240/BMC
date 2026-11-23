@@ -186,16 +186,12 @@ export async function sendConsultationResponseNotification({
   consultation,
 }: ConsultationResponseNotification): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.RESEND_FROM_EMAIL?.trim();
-  const ownerEmail = process.env.RESEND_TO_EMAIL?.trim();
-  if (!apiKey || !from || !ownerEmail) {
-    const missing = [
-      !apiKey && "RESEND_API_KEY",
-      !from && "RESEND_FROM_EMAIL",
-      !ownerEmail && "RESEND_TO_EMAIL",
-    ].filter((value): value is string => Boolean(value));
+  const defaultMailbox = "connect@bossmomconsulting.com";
+  const from = process.env.RESEND_FROM_EMAIL?.trim() || defaultMailbox;
+  const ownerEmail = process.env.RESEND_TO_EMAIL?.trim() || defaultMailbox;
+  if (!apiKey) {
     logger.warn(
-      { event: "consultation_response_email_not_configured", missing },
+      { event: "consultation_response_email_not_configured", missing: ["RESEND_API_KEY"] },
       "Resend consultation response emails are not configured.",
     );
     return false;
