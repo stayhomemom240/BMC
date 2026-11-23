@@ -19,6 +19,6 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM_EMAIL
-        sync: false
+        value: connect@bossmomconsulting.com
       - key: RESEND_TO_EMAIL
-        sync: false
+        value: connect@bossmomconsulting.com

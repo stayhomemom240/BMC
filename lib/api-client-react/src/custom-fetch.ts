@@ -351,7 +351,8 @@ export async function customFetch<T = unknown>(
 
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
-  const publicEndpoint = new URL(resolveUrl(input), "https://localhost").pathname.startsWith("/api/public/");
+  const pathname = new URL(resolveUrl(input), "https://localhost").pathname;
+  const publicEndpoint = pathname === "/api/healthz" || pathname.startsWith("/api/public/");
   if (!publicEndpoint && _authTokenGetter && !headers.has("authorization")) {
     const token = await _authTokenGetter();
     if (token) {
